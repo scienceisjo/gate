@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>탐구 훈련소 LV.2 — 설계 감별소</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+:root{
+  --paper:#efe9da; --paper2:#e6dfcb; --ink:#1d273f; --ink-soft:#4a5675;
+  --line:rgba(29,39,63,.12); --line-strong:rgba(29,39,63,.24);
+  --card:#fbf8f0; --shadow:rgba(29,39,63,.16);
+  --amber:#f0a818; --green:#16a34a; --red:#d6362b; --redink:#9a241c;
+  /* flaw-type palette (the LV.2 taxonomy, echoing LV.1's variable colors) */
+  --c-conf:#e8542b;  /* 교란변인 */
+  --c-ctrl:#0e9488;  /* 대조·플라세보 */
+  --c-samp:#4845d6;  /* 표본·무작위 */
+  --c-meas:#c2790f;  /* 측정·정의 */
+  --c-corr:#8b5cf6;  /* 상관·인과 */
+  --c-auth:#d6456e;  /* 증거·권위 */
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{
+  font-family:'Pretendard Variable',Pretendard,sans-serif;color:var(--ink);background:var(--paper);
+  background-image:
+    linear-gradient(var(--line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:27px 27px;
+  overflow-x:hidden;-webkit-user-select:none;user-select:none;
+}
+.wrap{max-width:1000px;margin:0 auto;padding:16px 16px 64px;min-height:100%}
+.mono{font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:11px;cursor:pointer}
+.logo{width:46px;height:46px;border-radius:13px;background:var(--ink);color:var(--paper);
+  display:grid;place-items:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:17px;box-shadow:4px 4px 0 var(--red)}
+.brand h1{font-family:'Jua',sans-serif;font-size:19px;margin:0;line-height:1}
+.brand p{margin:3px 0 0;font-size:11px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;letter-spacing:.06em}
+.topright{display:flex;align-items:center;gap:14px}
+.scorebox{text-align:right;line-height:1.1}
+.scorebox .k{font-size:10px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;letter-spacing:.08em}
+.scorebox .v{font-family:'Jua',sans-serif;font-size:20px;color:var(--redink)}
+.pills{display:flex;gap:6px}
+.pp{width:26px;height:8px;border-radius:6px;background:var(--line-strong);transition:.3s}
+.pp.done{background:var(--red)} .pp.cur{background:var(--ink)}
+
+/* ---------- generic ---------- */
+.screen{display:none;animation:fade .42s ease both}
+.screen.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1.5px solid var(--line-strong);border-radius:18px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:13px;
+  font-weight:800;font-size:15px;background:var(--ink);color:var(--paper);box-shadow:0 4px 0 #121a2e;transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #121a2e}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--ink);box-shadow:none}
+.btn.ghost:active{transform:translateY(2px)}
+.btn.accent{background:var(--red);box-shadow:0 4px 0 var(--redink)}
+.btn.accent:active{box-shadow:0 1px 0 var(--redink)}
+.btn:disabled{opacity:.4;pointer-events:none}
+
+/* ---------- HOME ---------- */
+.hero{padding:30px 28px 26px;position:relative;overflow:hidden;margin-bottom:22px}
+.hero:before{content:"";position:absolute;right:-50px;top:-50px;width:200px;height:200px;border-radius:50%;background:var(--red);opacity:.12}
+.hero .tag{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--redink);font-weight:700;letter-spacing:.12em}
+.hero h2{font-family:'Jua',sans-serif;font-size:clamp(28px,5.6vw,44px);margin:8px 0 8px;line-height:1.08}
+.hero p{margin:0;font-size:15px;color:var(--ink-soft);max-width:600px;line-height:1.65}
+.hero .lv1note{margin-top:14px;font-size:13px;color:var(--ink-soft);background:var(--paper2);
+  border:1px dashed var(--line-strong);border-radius:11px;padding:9px 13px;display:inline-block}
+.hero .lv1note b{color:var(--ink)}
+
+.sec-title{font-family:'Jua',sans-serif;font-size:18px;margin:0 0 13px;display:flex;align-items:center;gap:9px}
+.case-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}
+.case-card{padding:0;text-align:left;position:relative;transition:transform .12s,box-shadow .12s;box-shadow:0 3px 0 var(--shadow);overflow:visible}
+.case-card:active{transform:translateY(2px)}
+.case-card .tab{position:absolute;top:-11px;left:16px;background:var(--ink);color:var(--paper);
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;padding:3px 11px;border-radius:7px 7px 0 0;letter-spacing:.08em}
+.case-card .inner{padding:20px 16px 16px}
+.case-card .ktag{display:inline-block;font-size:11px;font-weight:800;font-family:'JetBrains Mono',monospace;
+  color:var(--redink);background:rgba(214,54,43,.1);border-radius:6px;padding:2px 8px;margin-bottom:8px}
+.case-card h3{margin:0 0 7px;font-size:16.5px;font-weight:800;line-height:1.25}
+.case-card .cdesc{margin:0 0 11px;font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+.case-card .dots{display:flex;gap:5px;flex-wrap:wrap}
+.cdot{width:9px;height:9px;border-radius:3px}
+.case-card .seal{position:absolute;top:13px;right:13px;width:26px;height:26px;border-radius:50%;
+  background:var(--green);color:#fff;display:none;place-items:center;font-size:15px;box-shadow:0 0 0 3px rgba(22,163,74,.2)}
+.case-card.done .seal{display:grid}
+.case-card.done{border-color:var(--green)}
+.case-card.done h3{color:var(--ink-soft)}
+
+.gloss-btn{margin:18px auto 0;display:block}
+.gloss{margin-top:14px;display:none}
+.gloss.open{display:block;animation:fade .3s both}
+.gloss-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:11px}
+.gloss-item{background:var(--card);border:1.5px solid var(--line-strong);border-left-width:5px;border-radius:12px;padding:11px 13px}
+.gloss-item .gt{font-weight:800;font-size:14px}
+.gloss-item .gd{font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin-top:3px}
+
+/* ---------- CASE shell ---------- */
+.case-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.case-head .label{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--redink);font-weight:700;letter-spacing:.1em}
+.case-head h2{font-family:'Jua',sans-serif;font-size:clamp(21px,4.4vw,29px);margin:5px 0 0;line-height:1.15}
+.step-chip{flex:none;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--ink-soft);
+  background:var(--paper2);border:1px solid var(--line-strong);border-radius:9px;padding:6px 11px}
+
+/* dossier (the evidence document) */
+.dossier{position:relative;border-radius:14px;padding:16px 17px 15px;margin-bottom:16px;
+  background:var(--card);border:1.5px solid var(--line-strong);box-shadow:0 3px 0 var(--shadow)}
+.dossier:before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:5px;border-radius:5px;background:var(--ink-soft)}
+.dossier.ad:before{background:var(--red)} .dossier.news:before{background:var(--c-samp)} .dossier.history:before{background:var(--amber)}
+.dossier .dlabel{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--ink-soft);
+  margin:0 0 8px 10px;display:flex;align-items:center;gap:7px}
+.dossier.ad .dlabel{color:var(--redink)} .dossier.news .dlabel{color:var(--c-samp)} .dossier.history .dlabel{color:#9a6a0a}
+.dossier .dbody{margin-left:10px;font-size:15px;line-height:1.7}
+.dossier.news .dbody{font-style:italic}
+.dossier .dbody b{color:var(--ink)}
+.dossier .intro{margin:11px 0 0 10px;font-size:13px;line-height:1.6;color:var(--ink-soft);
+  background:var(--paper2);border-radius:10px;padding:9px 12px;border:1px dashed var(--line-strong)}
+.dossier .intro b{color:#9a6a0a}
+/* story illustration inside the dossier */
+.story-img{display:block;width:calc(100% - 10px);margin:0 0 13px 10px;aspect-ratio:16/9;object-fit:cover;
+  border-radius:12px;border:1.5px solid var(--line-strong);background:var(--paper2);box-shadow:0 2px 0 var(--shadow)}
+
+/* prompt */
+.prompt{padding:15px 17px;margin-bottom:13px;box-shadow:0 3px 0 var(--shadow)}
+.prompt .scn{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--ink-soft);font-weight:700;letter-spacing:.08em}
+.prompt .q{font-size:16.5px;font-weight:700;margin:6px 0 0;line-height:1.5}
+.prompt .q b{color:var(--redink)}
+.prompt .sub{font-size:12.5px;color:var(--ink-soft);margin:7px 0 0;line-height:1.5}
+
+/* options */
+.opts{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.opt{display:flex;align-items:flex-start;gap:12px;padding:14px 15px;border-radius:13px;background:#fff;
+  border:2px solid var(--line-strong);text-align:left;font-size:15px;font-weight:600;line-height:1.45;
+  box-shadow:0 3px 0 var(--shadow);transition:transform .1s,border-color .12s,background .12s;width:100%}
+.opt:active{transform:translateY(2px)}
+.opt .box{flex:none;width:26px;height:26px;border-radius:8px;border:2px solid var(--line-strong);
+  display:grid;place-items:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;color:var(--ink-soft);transition:.12s}
+.opt .txt{flex:1}
+.opt .cat{flex:none;margin-top:2px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+  padding:3px 7px;border-radius:20px;color:#fff;white-space:nowrap;align-self:flex-start}
+.opt.sel{border-color:var(--ink);background:#fff}
+.opt.sel .box{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.opt .why{display:none;flex-basis:100%;font-size:12.8px;font-weight:500;color:var(--ink-soft);line-height:1.55;
+  margin-top:4px;padding-top:9px;border-top:1px dashed var(--line-strong)}
+.opt.reveal .why{display:block}
+.opt.hit{border-color:var(--green);background:#f0fdf4}
+.opt.hit .box{background:var(--green);border-color:var(--green);color:#fff}
+.opt.miss{border-color:var(--green);background:#f0fdf4;border-style:dashed}
+.opt.wrong{border-color:var(--red);background:#fef2f2}
+.opt.wrong .box{background:var(--red);border-color:var(--red);color:#fff}
+.opt.dim{opacity:.5}
+.opt.correct{border-color:var(--green);background:#f0fdf4}
+.opt.correct .box{background:var(--green);border-color:var(--green);color:#fff}
+.opt.lock{pointer-events:none}
+.opt.shake{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+
+/* feedback */
+.fb{display:none;border-radius:13px;padding:14px 16px;font-size:14px;line-height:1.6;margin-bottom:6px}
+.fb.show{display:block;animation:fade .3s both}
+.fb.ok{background:#ecfdf3;border:1.5px solid var(--green);color:#0f5132}
+.fb.no{background:#fef2f2;border:1.5px solid var(--red);color:#7a1b15}
+.fb b{font-weight:800}
+.fb .tally{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;margin-bottom:5px}
+
+/* footer nav */
+.footer-nav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px}
+.nextwrap{margin-top:6px;display:flex;justify-content:flex-end}
+
+/* ---------- case resolution + stamp ---------- */
+.resolve{position:relative;padding:26px 22px 22px;text-align:center;overflow:hidden}
+.stamp{position:absolute;top:18px;right:14px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;
+  padding:7px 13px;border:3px solid var(--redink);color:var(--redink);border-radius:8px;transform:rotate(-13deg) scale(2);opacity:0;
+  letter-spacing:.04em;text-transform:uppercase}
+.stamp.show{animation:slam .5s cubic-bezier(.2,1.4,.4,1) forwards}
+.stamp.blue{border-color:var(--c-samp);color:var(--c-samp)}
+@keyframes slam{0%{opacity:0;transform:rotate(-30deg) scale(2.4)}70%{opacity:1;transform:rotate(-13deg) scale(.92)}100%{opacity:.92;transform:rotate(-13deg) scale(1)}}
+.resolve .ricon{font-size:42px}
+.resolve h3{font-family:'Jua',sans-serif;font-size:24px;margin:8px 0 6px}
+.resolve .lesson{font-size:14px;line-height:1.7;color:var(--ink-soft);max-width:560px;margin:0 auto 14px;
+  background:var(--paper2);border-radius:12px;padding:13px 16px;border:1px dashed var(--line-strong);text-align:left}
+.resolve .lesson b{color:#9a6a0a}
+.chips{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin:0 auto 18px;max-width:540px}
+.chip{font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#fff;padding:5px 11px;border-radius:20px}
+
+/* ---------- RESULT ---------- */
+.result{padding:30px 22px 24px;text-align:center;position:relative;overflow:hidden}
+.result .rank-stamp{display:inline-block;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;letter-spacing:.1em;
+  border:2.5px solid var(--redink);color:var(--redink);border-radius:8px;padding:6px 14px;transform:rotate(-3deg);margin-bottom:8px}
+.result .stars-r{font-size:40px;letter-spacing:6px;margin:6px 0 2px}
+.result .star{display:inline-block;animation:pop .5s backwards}
+@keyframes pop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+.result h2{font-family:'Jua',sans-serif;font-size:32px;margin:8px 0 4px}
+.result .scoreline{font-size:15px;color:var(--ink-soft);margin:0 0 20px}
+.result .scoreline b{color:var(--ink)}
+.recap{text-align:left;background:var(--paper2);border:1px dashed var(--line-strong);border-radius:14px;
+  padding:16px 18px;margin:18px auto 0;max-width:600px;font-size:13.5px;line-height:1.75}
+.recap h4{font-family:'Jua',sans-serif;font-size:16px;margin:0 0 9px}
+.recap .nxt{margin-top:11px;padding-top:11px;border-top:1px dashed var(--line-strong);color:var(--ink-soft)}
+.recap .nxt b{color:var(--redink)}
+.credit{margin-top:18px;font-size:12px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace}
+
+/* ============================================================
+   LV.2 ADD-ONS — onboarding · localStorage badge · certificate
+   (extends the existing "dossier / design-review" identity)
+============================================================ */
+/* topbar certificate button */
+.topbtn{width:42px;height:42px;border-radius:12px;border:2px solid var(--line-strong);background:var(--card);
+  font-size:18px;display:grid;place-items:center;box-shadow:0 3px 0 var(--shadow);transition:transform .1s}
+.topbtn:active{transform:translateY(2px)}
+.topbtn.ready{border-color:var(--amber);background:#fff8e8;animation:pulseGold 1.9s infinite}
+@keyframes pulseGold{0%,100%{box-shadow:0 3px 0 rgba(240,168,24,.35)}50%{box-shadow:0 3px 0 rgba(240,168,24,.35),0 0 0 5px rgba(240,168,24,.16)}}
+
+/* name chip (home hero) */
+.name-chip{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--ink);
+  background:var(--paper2);border:1px solid var(--line-strong);border-radius:30px;padding:5px 6px 5px 13px;margin-top:14px;vertical-align:middle}
+.name-chip .nm{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.name-chip button{font-size:11px;font-weight:700;color:var(--ink-soft);background:#fff;border:1px solid var(--line-strong);
+  border-radius:20px;padding:4px 10px}
+.name-chip button:active{transform:translateY(1px)}
+
+/* ---------- ONBOARDING ---------- */
+.onboard{max-width:520px;margin:18px auto 0;padding:34px 28px 30px;text-align:center;position:relative;overflow:hidden}
+.onboard:before{content:"";position:absolute;left:-44px;bottom:-44px;width:170px;height:170px;border-radius:50%;background:var(--amber);opacity:.13}
+.onboard .ob-badge{width:62px;height:62px;border-radius:17px;background:var(--ink);color:var(--paper);display:grid;place-items:center;
+  font-family:'JetBrains Mono',monospace;font-weight:700;font-size:21px;margin:0 auto 14px;box-shadow:5px 5px 0 var(--red)}
+.onboard .ob-tag{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--redink)}
+.onboard h2{font-family:'Jua',sans-serif;font-size:25px;margin:9px 0 9px;line-height:1.2}
+.onboard p{font-size:14px;color:var(--ink-soft);line-height:1.65;margin:0 auto 20px;max-width:410px}
+.ob-err{color:var(--red);font-size:12.5px;font-weight:700;min-height:17px;margin-bottom:6px}
+.ob-input{width:100%;max-width:360px;font-family:inherit;font-size:17px;font-weight:700;color:var(--ink);text-align:center;
+  padding:14px 16px;border-radius:13px;border:2px solid var(--line-strong);background:#fff;outline:none;margin:0 auto 8px;display:block;-webkit-user-select:text;user-select:text}
+.ob-input:focus{border-color:var(--ink)}
+.ob-hint{font-size:11.5px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;margin-bottom:18px}
+
+/* ---------- CERTIFICATE ---------- */
+.cert-actions{display:flex;justify-content:space-between;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.cert{max-width:680px;margin:0 auto;background:var(--card);border:2px solid var(--ink);border-radius:8px;
+  box-shadow:0 10px 0 rgba(29,39,63,.1),0 16px 34px rgba(29,39,63,.18);padding:10px}
+.cert-frame{border:1.5px solid var(--red);border-radius:4px;padding:32px 26px 24px;text-align:center;position:relative;overflow:hidden}
+.cert-frame:before{content:"";position:absolute;inset:8px;border:1px solid var(--line-strong);border-radius:3px;pointer-events:none}
+.cert-emblem{width:118px;height:118px;object-fit:contain;margin:0 auto 6px;display:block;filter:drop-shadow(0 4px 8px rgba(29,39,63,.18))}
+.cert-org{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--ink)}
+.cert-div{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;color:var(--ink-soft);margin-top:3px}
+.cert-title{font-family:'Jua',sans-serif;font-size:clamp(26px,5vw,36px);margin:16px 0 2px;color:var(--ink);letter-spacing:.02em}
+.cert-titleen{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.22em;color:var(--redink);margin-bottom:16px}
+.cert-body{font-size:13.5px;line-height:1.85;color:var(--ink-soft);max-width:470px;margin:0 auto 12px}
+.cert-name{font-family:'Jua',sans-serif;font-size:clamp(26px,6.4vw,40px);color:var(--ink);margin:8px 0 2px;line-height:1.2;word-break:keep-all}
+.cert-rule{width:min(320px,80%);height:2px;background:var(--ink);margin:5px auto 16px;opacity:.6}
+.cert-rank{display:inline-flex;align-items:center;gap:8px;font-family:'Jua',sans-serif;font-size:16px;color:var(--redink);
+  background:rgba(214,54,43,.08);border:1.5px solid rgba(214,54,43,.3);border-radius:30px;padding:7px 16px;margin-bottom:8px}
+.cert-stars{color:var(--amber);letter-spacing:2px;font-size:15px}
+.cert-score{font-size:12.5px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;margin-bottom:18px}
+.cert-foot{display:flex;justify-content:space-around;gap:12px;flex-wrap:wrap;border-top:1px dashed var(--line-strong);padding-top:14px}
+.cert-foot>div{display:flex;flex-direction:column;gap:2px;min-width:96px}
+.cf-k{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase}
+.cf-v{font-size:12.5px;font-weight:700;color:var(--ink)}
+.cf-v.mono{font-family:'JetBrains Mono',monospace}
+.cert-stamp2{position:absolute;top:18px;right:16px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12.5px;line-height:1.15;
+  text-align:center;color:var(--redink);border:3px solid var(--redink);border-radius:8px;padding:8px 10px;transform:rotate(-12deg);opacity:.85}
+
+/* locked certificate */
+.cert-locked{max-width:520px;margin:0 auto;text-align:center;padding:34px 26px 30px}
+.cert-locked .lk{font-size:50px}
+.cert-locked h3{font-family:'Jua',sans-serif;font-size:22px;margin:12px 0 6px}
+.cert-locked p{font-size:14px;color:var(--ink-soft);line-height:1.7;margin:0 auto 16px;max-width:400px}
+.cert-locked .prog{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--redink);font-size:15px;margin-bottom:18px}
+
+/* certificate card on HOME */
+.cert-home{display:flex;align-items:center;gap:14px;padding:16px 18px;text-align:left;width:100%;box-shadow:0 3px 0 var(--shadow);transition:transform .1s}
+.cert-home:active{transform:translateY(2px)}
+.cert-home .ch-ico{flex:none;width:50px;height:50px;border-radius:14px;display:grid;place-items:center;font-size:25px;background:var(--paper2);border:1.5px solid var(--line-strong)}
+.cert-home.ready{border-color:var(--amber)}
+.cert-home.ready .ch-ico{background:#fff8e8;border-color:var(--amber)}
+.cert-home .ch-main{flex:1;min-width:0}
+.cert-home .ch-t{font-family:'Jua',sans-serif;font-size:16px}
+.cert-home .ch-d{font-size:12.5px;color:var(--ink-soft);margin-top:2px;line-height:1.5}
+.cert-home .ch-go{flex:none;font-size:13px;font-weight:800;color:var(--redink);font-family:'JetBrains Mono',monospace}
+.cert-home .ch-bar{height:7px;border-radius:6px;background:var(--line-strong);overflow:hidden;margin-top:8px;max-width:260px}
+.cert-home .ch-bar i{display:block;height:100%;background:var(--amber);border-radius:6px;transition:width .4s}
+
+@media(max-width:560px){
+  .opt{flex-wrap:wrap}
+  .opt .cat{order:3;margin-left:38px}
+  .hero{padding:24px 20px}
+  .cert-frame{padding:26px 18px 20px}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001s!important}
+  .stamp{opacity:.92;transform:rotate(-13deg) scale(1)}
+  .topbtn.ready{box-shadow:0 3px 0 rgba(240,168,24,.35)}
+}
+
+/* ---------- PRINT (certificate only) ---------- */
+@media print{
+  @page{margin:14mm}
+  body{background:#fff !important;background-image:none !important}
+  .topbar,.no-print,.footer-nav{display:none !important}
+  body *{visibility:hidden}
+  #certPrintArea,#certPrintArea *{visibility:visible}
+  #certPrintArea{position:absolute;left:0;top:0;width:100%}
+  .cert{box-shadow:none;max-width:100%;border-color:#1d273f}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand" onclick="toHome()">
+      <div class="logo">L2</div>
+      <div><h1>탐구 훈련소</h1><p>설계 감별소 · DESIGN REVIEW</p></div>
+    </div>
+    <div class="topright">
+      <button class="topbtn" id="certBtn" onclick="openCert()" title="자격증">🏅</button>
+      <div class="scorebox"><div class="k">심사 점수</div><div class="v" id="scoreVal">0</div></div>
+      <div class="pills" id="pills"></div>
+    </div>
+  </div>
+
+  <!-- ===================== ONBOARD ===================== -->
+  <section id="onboard" class="screen"><div id="onboardBody"></div></section>
+
+  <!-- ===================== HOME ===================== -->
+  <section id="home" class="screen">
+    <div class="card hero">
+      <div class="tag">LV.2 · 자격 인증 — 설계 심사관</div>
+      <h2>결함을 찾아, 다시 설계하라.</h2>
+      <p>LV.1에서 변인을 <b>구분</b>했다면, 이제 진짜 연구를 <b>해부</b>할 차례다. 광고·뉴스·과학사 속 결함 있는 실험을 진단하고, 왜 결론이 무너지는지 밝히고, 직접 다시 설계하는 <b>동료 심사관(peer reviewer)</b>이 되어 보자.</p>
+      <div class="lv1note">심사관의 일은 정답 하나를 고르는 게 아니라 <b>결함을 모두 찾고 더 나은 설계를 제안</b>하는 것. 틀려도 감점으로 끝나지 않으니, 마음껏 따져 보자.</div>
+      <div class="name-chip" id="nameChip" style="display:none">
+        <span>🪪</span><span class="nm" id="nameChipText"></span>
+        <button onclick="changeName()">변경</button>
+      </div>
+    </div>
+
+    <h3 class="sec-title">🗂️ 심사 대기 사건</h3>
+    <div class="case-grid" id="caseGrid"></div>
+
+    <h3 class="sec-title" style="margin-top:28px">🏅 자격 인증</h3>
+    <button class="card cert-home" id="certHome" onclick="openCert()"></button>
+
+    <button class="btn ghost gloss-btn" onclick="toggleGloss()">📖 심화 용어 펼치기</button>
+    <div class="gloss" id="gloss"><div class="gloss-grid" id="glossGrid"></div></div>
+  </section>
+
+  <!-- ===================== CASE ===================== -->
+  <section id="case" class="screen">
+    <div id="caseScreen"></div>
+  </section>
+
+  <!-- ===================== CERTIFICATE ===================== -->
+  <section id="cert" class="screen"><div id="certBody"></div></section>
+
+  <!-- ===================== RESULT ===================== -->
+  <section id="result" class="screen">
+    <div id="resultBody"></div>
+  </section>
+</div>
+
+<script>
+/* =========================================================
+   FLAW-TYPE TAXONOMY  (LV.2 concept color system)
+========================================================= */
+const CAT={
+  conf:{label:'교란변인',     color:'var(--c-conf)'},
+  ctrl:{label:'대조·플라세보', color:'var(--c-ctrl)'},
+  samp:{label:'표본·무작위',   color:'var(--c-samp)'},
+  meas:{label:'측정·정의',     color:'var(--c-meas)'},
+  corr:{label:'상관·인과',     color:'var(--c-corr)'},
+  auth:{label:'증거·권위',     color:'var(--c-auth)'},
+};
+
+const GLOSSARY=[
+  {t:'대조군 (control group)', c:'ctrl', d:'비교 기준이 되는 집단. 처치를 받지 않아, 처치 집단의 변화가 «정말 처치 때문인지» 가려 준다.'},
+  {t:'교란변인 (confound)', c:'conf', d:'조작변인과 결과에 동시에 영향을 줘 인과를 헷갈리게 하는 숨은 요인. 통제하거나 같게 맞춰야 한다.'},
+  {t:'플라세보 (placebo)', c:'ctrl', d:'효과 없는 가짜 처치. «좋아질 것이다»라는 기대만으로 생기는 변화를 걸러내기 위해 쓴다.'},
+  {t:'눈가림 (blinding)', c:'samp', d:'참가자(또는 평가자)가 누가 진짜 처치를 받는지 모르게 하는 것. 기대·편견의 개입을 막는다.'},
+  {t:'무작위 배정 (randomization)', c:'samp', d:'참가자를 우연에 맡겨 집단에 나누는 것. 집단 간 조건을 비슷하게 만들어 배정 편향을 줄인다.'},
+  {t:'표본 크기 (sample size)', c:'samp', d:'관찰한 대상의 수. 너무 적으면 우연한 결과일 가능성을 배제하기 어렵다.'},
+  {t:'조작적 정의 (operational definition)', c:'meas', d:'«집중력»처럼 추상적인 것을, 누가 재도 같게 나오는 «측정 가능한 절차»로 바꿔 정의하는 것.'},
+  {t:'상관 ≠ 인과', c:'corr', d:'두 값이 함께 변한다고 해서 하나가 다른 하나를 일으키는 건 아니다. 숨은 공통 원인을 의심하라.'},
+  {t:'증거 vs 권위', c:'auth', d:'분명한 증거도 곧장 받아들여지진 않는다. 메커니즘 설명·재현·사회적 수용이 함께 설득력을 만든다.'},
+];
+
+/* =========================================================
+   CASES
+   * img: GitHub Pages 상대경로. 이미지가 없으면 자동으로 숨겨짐.
+========================================================= */
+const CASES=[
+ /* ---------- CASE 01 — 키쑥쑥 영양제 ---------- */
+ {code:'CASE 01', kind:'history', dlabel:'광고 · ADVERTISEMENT', tag:'광고 해부',
+  img:'img/case-01.png',
+  title:'키 크는 영양제 «키쑥쑥»',
+  cdesc:'6개월에 3cm? 광고가 내놓은 «증거»를 심사한다.',
+  doss_kind:'ad',
+  doc:'한 회사가 신제품 영양제 «키쑥쑥»을 출시했다. 6개월간 매일 복용한 초등학생 <b>20명</b>을 조사했더니 평균 키가 <b>3.1cm</b> 자랐다. 회사는 광고한다 — «키쑥쑥으로 우리 아이 키 쑥쑥! 6개월에 3cm UP!»',
+  concepts:['대조군','교란변인','플라세보','이중맹검'],
+  steps:[
+    {kind:'multi',
+     prompt:'심사관으로서 이 광고의 «설계 결함»을 모두 찾아라.',
+     sub:'결함은 하나가 아닐 수 있다. 그럴듯하지만 결함이 아닌 함정도 섞여 있다.',
+     options:[
+       {t:'비교할 대조군(먹지 않은 집단)이 없다.', cat:'ctrl', ok:true, why:'먹은 집단만 봐서는 변화가 영양제 때문인지 알 수 없다. 안 먹은 집단과 비교해야 한다.'},
+       {t:'자연 성장·식단·수면 같은 다른 요인을 통제하지 않았다.', cat:'conf', ok:true, why:'키에 영향을 주는 교란변인이 가득한데, 모두 영양제 덕으로 돌리고 있다.'},
+       {t:'가짜 약(위약) 집단이 없어 기대 효과를 걸러내지 못한다.', cat:'ctrl', ok:true, why:'«좋아질 것»이라는 기대만으로도 행동이 바뀔 수 있다. 위약 비교가 필요하다.'},
+       {t:'종속변인인 «키»를 측정할 수 없다.', cat:'meas', ok:false, why:'함정! 키는 자로 정확히 잴 수 있다. 측정이 문제가 아니라 비교 대상이 없는 게 문제다.'},
+       {t:'표본 20명은 너무 많아 평균이 왜곡됐다.', cat:'samp', ok:false, why:'함정! 표본이 많은 건 오히려 좋다. 적을 때가 문제다.'},
+     ],
+     pass:'이 광고의 치명타는 <b>대조군의 부재</b>. 비교할 집단이 없으면 그 어떤 변화도 «효과의 증거»가 될 수 없다.'},
+    {kind:'single',
+     tag:'평가 · EVALUATE', prompt:'왜 «3cm 자랐다»가 영양제 효과의 증거가 <b>되지 못</b>할까?',
+     options:[
+       {t:'초등학생은 영양제와 상관없이 6개월이면 원래 몇 cm 자란다. 안 먹은 대조군과 비교하지 않으면 자연 성장과 약효를 구분할 길이 없다.', ok:true, why:'정확하다. 변화가 있다는 사실보다 «무엇과 비교했는가»가 핵심이다.'},
+       {t:'3cm는 변화량이 너무 작아서 의미가 없기 때문이다.', ok:false, why:'크기의 문제가 아니다. 100cm가 자랐어도 비교 대상이 없으면 마찬가지로 증거가 못 된다.'},
+       {t:'20명의 평균을 냈기 때문에 개인차가 사라졌기 때문이다.', ok:false, why:'평균을 내는 건 정상적인 분석이다. 문제는 비교군이 없다는 점이다.'},
+     ]},
+    {kind:'single',
+     tag:'재설계 · REDESIGN', prompt:'심사관이라면 이 연구를 <b>어떻게 다시 설계</b>하라고 제안할까?',
+     options:[
+       {t:'비슷한 조건의 어린이를 무작위로 두 집단으로 나눠, 한쪽은 «키쑥쑥», 한쪽은 똑같이 생긴 위약을 주고(이중맹검), 식단·운동·수면을 같게 유지한 뒤 6개월 후 키 변화를 비교한다.', ok:true, why:'대조군·무작위배정·위약·교란변인 통제를 모두 갖춘 공정한 설계다.'},
+       {t:'«키쑥쑥»을 먹는 아이를 100명으로 늘려 다시 평균 키를 잰다.', ok:false, why:'대조군이 없으면 100명이어도 자연 성장과 약효를 가를 수 없다.'},
+       {t:'키가 가장 많이 자란 아이 5명만 골라 인터뷰해 효과를 확인한다.', ok:false, why:'잘 자란 아이만 고르는 건 전형적인 선택 편향이다.'},
+     ]},
+  ],
+  lesson:'«변화가 있었다»와 «그 처치가 변화를 일으켰다»는 전혀 다른 말이다. 둘을 잇는 다리가 바로 <b>대조군</b>이다.'},
+
+ /* ---------- CASE 02 — 린드의 괴혈병 실험 ---------- */
+ {code:'CASE 02', kind:'history', dlabel:'과학사 기록 · 1747', tag:'과학사 재심',
+  img:'img/case-02.png',
+  title:'린드의 괴혈병 실험 (1747)',
+  cdesc:'의학사의 명작도 현대 기준으로 다시 심사한다.',
+  doss_kind:'history',
+  doc:'1747년, 영국 해군 의사 제임스 린드는 괴혈병에 걸린 선원 <b>12명을 2명씩 6조</b>로 나눠 각 조에 서로 다른 치료(사과술·식초·바닷물·오렌지와 레몬 등)를 주었다. 식사와 생활 환경은 같게 맞췄다. 결과는 분명했다 — <b>오렌지·레몬</b>을 먹은 조만 빠르게 회복했다. 의학사에 남은 «최초의 대조 실험» 중 하나다.',
+  intro:'주의: 린드를 깎아내리려는 게 아니다. 그의 설계는 당시로선 탁월했다. 다만 <b>현대의 엄격한 기준</b>으로 보면 보완할 점이 있다 — 무엇일까?',
+  concepts:['표본 크기','무작위 배정','눈가림','통제변인의 강점'],
+  steps:[
+    {kind:'multi',
+     prompt:'현대 기준에서 린드의 설계에 <b>보완이 필요한 점</b>을 모두 찾아라.',
+     sub:'좋은 연구에도 한계는 있다. 하지만 «강점»을 결함으로 오해하는 함정도 있다.',
+     options:[
+       {t:'한 치료당 단 2명 — 표본이 너무 적어 우연일 가능성을 배제하기 어렵다.', cat:'samp', ok:true, why:'사람마다 회복 속도가 다르다. 단 2명이면 그 2명이 우연히 잘 나았을 가능성을 가리기 어렵다.'},
+       {t:'선원을 각 조에 무작위로 배정했다는 기록이 없다.', cat:'samp', ok:true, why:'배정이 우연이 아니면, 더 건강한 선원이 특정 조에 몰리는 배정 편향이 생길 수 있다.'},
+       {t:'누가 어떤 치료를 받는지 모두가 알고 있었다 — 눈가림이 없다.', cat:'samp', ok:true, why:'환자·관찰자의 기대가 회복 판정에 끼어들 수 있다. 이중맹검이면 더 믿을 만하다.'},
+       {t:'린드는 음식 외의 조건을 전혀 통제하지 않았다.', cat:'conf', ok:false, why:'함정! 린드는 식사와 환경을 같게 통제했다. 그게 바로 이 실험의 핵심 강점이다.'},
+       {t:'종속변인인 «회복 정도»를 정의할 수 없다.', cat:'meas', ok:false, why:'함정! 회복은 잇몸·기력 등으로 관찰·판정할 수 있다.'},
+     ],
+     pass:'핵심 보완점은 <b>표본 수</b>. 통제변인을 같게 맞춘 린드의 안목은 오히려 본받을 강점이다.'},
+    {kind:'single',
+     tag:'평가 · EVALUATE', prompt:'현대 기준에서 «한 조에 2명»이 왜 약점일까?',
+     options:[
+       {t:'사람마다 회복 속도가 다른데 단 2명이면, 우연히 그 둘이 잘 나았을 가능성을 배제하기 어렵다. 더 많은 사람에게서 같은 결과가 나와야 신뢰가 높아진다.', ok:true, why:'표본이 클수록 우연의 영향이 줄고, 결과의 재현 가능성이 커진다.'},
+       {t:'2명은 너무 적어서 식사를 똑같이 통제하는 것이 불가능하기 때문이다.', ok:false, why:'통제는 인원수와 무관하다. 2명이든 200명이든 식사는 같게 맞출 수 있다.'},
+       {t:'6개나 되는 조를 비교하느라 결과가 복잡해졌기 때문이다.', ok:false, why:'여러 치료를 한 번에 비교한 건 오히려 효율적인 설계였다.'},
+     ]},
+    {kind:'single',
+     tag:'재설계 · REDESIGN', prompt:'린드의 설계를 <b>현대식으로 보완</b>한다면?',
+     options:[
+       {t:'더 많은 선원을 무작위로 각 치료 집단에 배정하고, 가능하면 환자와 평가자가 치료 종류를 모르게 한 뒤(눈가림), 회복 판정 기준을 미리 정해 비교한다.', ok:true, why:'표본·무작위배정·눈가림을 더하면서 린드의 통제 강점은 그대로 유지하는 설계다.'},
+       {t:'오렌지·레몬 조의 인원만 크게 늘려 효과를 확실히 보여 준다.', ok:false, why:'집단 간 인원이 달라지면 공정한 비교가 깨진다.'},
+       {t:'식사 통제를 풀고 각 선원이 원하는 대로 먹게 해 현실성을 높인다.', ok:false, why:'이 실험의 가장 큰 강점을 없애는 개악이다.'},
+     ]},
+  ],
+  lesson:'랜드마크 연구도 «무결점»은 아니다. 좋은 과학은 한계를 솔직히 인정하고, 다음 연구가 그것을 보완해 가는 <b>과정</b>이다.'},
+
+ /* ---------- CASE 03 — 세멜바이스 ---------- */
+ {code:'CASE 03', kind:'history', dlabel:'과학사 기록 · 1847', tag:'과학사 토론',
+  img:'img/case-03.png',
+  title:'옳은데도 거부당한 과학 — 제멜바이스',
+  cdesc:'증거는 분명했는데 왜 학계는 거부했을까?',
+  doss_kind:'history',
+  doc:'1847년 빈의 한 병원, 의사 이그나즈 제멜바이스는 충격적인 사실을 발견했다. 시신을 만진 손을 씻지 않고 산모를 진료하던 병동의 산욕열 사망률은 약 <b>18%</b>. 그가 «염소 용액으로 손 씻기»를 도입하자 사망률이 약 <b>2%</b>로 급감했다. 데이터는 분명했다. 그런데 의학계는 그의 주장을 거부했고, 제멜바이스는 인정받지 못한 채 쓸쓸히 생을 마쳤다.',
+  intro:'이 사건은 «설계의 결함»을 찾는 문제가 아니다. 제멜바이스의 증거는 오히려 훌륭했다. 심사관은 한 걸음 더 나아가, <b>증거가 받아들여지는 과정</b> 자체를 따져 본다.',
+  concepts:['증거 vs 권위','메커니즘의 역할','확증 편향','재현성'],
+  steps:[
+    {kind:'single',
+     tag:'증거 평가 · EVALUATE', prompt:'먼저, 제멜바이스의 <b>증거</b> 자체는 어땠을까?',
+     options:[
+       {t:'강했다. 손 씻기 전(18%)과 후(2%)를 비교해 극적인 차이를 보였고, 여러 달 반복해 같은 결과를 얻었다.', ok:true, why:'손 씻기 전 시기가 사실상 비교 기준 역할을 했고, 결과가 반복되었다 — 꽤 탄탄한 증거다.'},
+       {t:'약했다. 대조군이 전혀 없어서 우연일 수도 있었다.', ok:false, why:'손 씻기 «전» 시기가 비교 기준이 되어 주었고, 효과는 반복해서 나타났다.'},
+       {t:'알 수 없다. 사망률은 애초에 측정할 수 없는 값이다.', ok:false, why:'사망 건수는 객관적으로 셀 수 있는 값이다.'},
+     ]},
+    {kind:'multi',
+     prompt:'데이터가 분명했는데도 학계가 거부한 이유로 <b>적절한 것</b>을 모두 골라라.',
+     sub:'과학은 데이터만으로 굴러가지 않는다. 사람과 사회가 함께 얽힌다.',
+     options:[
+       {t:'세균설이 나오기 전이라, «왜» 손 씻기가 효과 있는지 메커니즘을 설명하지 못했다.', cat:'auth', ok:true, why:'결과는 있는데 «이유»를 못 대니 설득력이 약했다. 이론(메커니즘)은 수용에 큰 힘이 된다.'},
+       {t:'«의사의 손이 병을 옮긴다»는 주장이 당시 의사들의 권위와 자존심을 건드렸다.', cat:'auth', ok:true, why:'증거가 불편한 진실을 가리킬 때, 사람은 종종 증거가 아니라 자존심을 지킨다.'},
+       {t:'기존의 «나쁜 공기(미아스마)» 통념과 정면으로 충돌했다.', cat:'auth', ok:true, why:'기존 패러다임과 부딪히는 주장은 더 강한 증거를 요구받는다 — 확증 편향의 한 모습이다.'},
+       {t:'제멜바이스의 사망률 데이터가 조작으로 밝혀졌기 때문이다.', cat:'auth', ok:false, why:'함정! 데이터는 진짜였다. 거부의 이유는 데이터의 진위가 아니었다.'},
+       {t:'사실은 손 씻기가 효과가 없었기 때문이다.', cat:'auth', ok:false, why:'함정! 효과는 진짜였고 훗날 세균설로 완전히 입증되었다.'},
+     ],
+     pass:'거부의 원인은 «나쁜 데이터»가 아니라 <b>설명의 부재</b>와 <b>권위·편견</b>이었다. 좋은 증거도 사회를 그냥 통과하지 못한다.'},
+    {kind:'single',
+     tag:'결론 · CONCLUDE', prompt:'이 사건이 «과학»에 대해 알려 주는 가장 중요한 <b>교훈</b>은?',
+     options:[
+       {t:'옳은 증거도 곧바로 받아들여지진 않는다. 과학은 데이터뿐 아니라 «설명(메커니즘)»과 «사회적 수용»을 함께 거치며, 재현과 이론이 뒷받침될 때 설득력이 커진다.', ok:true, why:'데이터·이론·재현·수용이 함께 맞물려야 과학적 합의가 만들어진다.'},
+       {t:'데이터만 충분하면 과학계는 언제나 즉시 진실을 받아들인다.', ok:false, why:'이 사건이 바로 그 생각의 반례다.'},
+       {t:'권위 있는 사람의 말은 항상 옳으므로 따르는 것이 안전하다.', ok:false, why:'제멜바이스의 교훈과 정반대다. 권위가 증거를 이긴 것이 비극이었다.'},
+     ]},
+  ],
+  lesson:'증거를 모으는 것은 과학의 절반일 뿐. 나머지 절반은 <b>설명하고, 재현하고, 설득하는</b> 일이다. 데이터가 옳아도 그 과정이 막히면 진실은 늦게 도착한다.'},
+
+ /* ---------- CASE 04 — 상관 ≠ 인과 ---------- */
+ {code:'CASE 04', kind:'news', dlabel:'신문 기사 · NEWS', tag:'기사 검증',
+  img:'img/case-04.png',
+  title:'아이스크림이 위험하다?',
+  cdesc:'함께 늘어난 두 숫자 — 정말 한쪽이 원인일까?',
+  doss_kind:'news',
+  doc:'«아이스크림이 위험하다? 연구에 따르면 아이스크림 판매량이 늘어나는 달에 물놀이 익사 사고도 함께 늘어났다. 따라서 아이스크림이 익사 사고를 유발하는 것으로 보인다.»',
+  concepts:['상관 ≠ 인과','교란변인(공통 원인)'],
+  steps:[
+    {kind:'single',
+     tag:'진단 · DIAGNOSE', prompt:'이 기사의 <b>핵심 오류</b>는 무엇일까?',
+     options:[
+       {t:'두 값이 함께 늘어난다는 «상관관계»를, 하나가 다른 하나를 일으킨다는 «인과관계»로 착각했다.', ok:true, why:'함께 움직인다고 해서 한쪽이 원인인 것은 아니다 — 상관과 인과는 다르다.'},
+       {t:'아이스크림 판매량을 측정하는 방법이 잘못되었다.', ok:false, why:'판매량 측정은 문제가 아니다. 해석이 문제다.'},
+       {t:'표본이 너무 작아서 우연히 그렇게 보였다.', ok:false, why:'표본 크기는 여기서 핵심이 아니다. 해석의 논리가 어긋났다.'},
+     ]},
+    {kind:'single',
+     tag:'분석 · ANALYZE', prompt:'두 숫자를 함께 끌어올린 <b>숨은 공통 원인</b>은?',
+     options:[
+       {t:'«더위(여름)»다. 더우면 아이스크림이 더 팔리고, 물놀이도 늘어 익사 위험도 함께 오른다.', ok:true, why:'더위라는 교란변인이 두 값을 동시에 끌어올렸다. 둘 사이엔 직접 인과가 없다.'},
+       {t:'아이스크림을 먹으면 수영 실력이 떨어지기 때문이다.', ok:false, why:'근거 없는 인과 가정이다. 기사가 저지른 실수를 똑같이 반복하는 셈이다.'},
+       {t:'익사 사고가 늘면 사람들이 아이스크림을 더 사기 때문이다.', ok:false, why:'역방향 인과도 비합리적이다. 공통 원인을 찾아야 한다.'},
+     ]},
+    {kind:'single',
+     tag:'검증 설계 · DESIGN', prompt:'정말 아이스크림이 익사 위험을 «높이는지» 확인하려면?',
+     options:[
+       {t:'더위 같은 교란변인을 같게 맞춘 뒤(예: 같은 기온·같은 물놀이 시간), 아이스크림 섭취 여부만 다르게 해 익사 위험을 비교하는 통제된 비교가 필요하다.', ok:true, why:'교란변인을 통제하면 둘 사이에 인과가 없다는 사실이 드러난다.'},
+       {t:'아이스크림 판매량과 익사 건수의 상관계수를 더 정밀하게 계산한다.', ok:false, why:'상관을 아무리 정밀히 재도 상관은 인과가 되지 않는다.'},
+       {t:'아이스크림 판매가 가장 많았던 해의 익사 기사만 모아 분석한다.', ok:false, why:'결론에 맞는 자료만 고르는 확증 편향이다.'},
+     ]},
+  ],
+  lesson:'두 숫자가 손잡고 움직일 때, 진짜 범인은 둘 다 조종하는 <b>제3의 변인</b>일 때가 많다. «함께 변한다»에서 «원인이다»로 건너뛰지 말 것.'},
+
+ /* ---------- CASE 05 — 브레인업 ---------- */
+ {code:'CASE 05', kind:'history', dlabel:'광고 · ADVERTISEMENT', tag:'광고 해부',
+  img:'img/case-05.png',
+  title:'집중력 앱 «브레인업»',
+  cdesc:'«좋아진 것 같다»는 느낌은 증거가 될 수 있을까?',
+  doss_kind:'ad',
+  doc:'«브레인업» 앱 광고: «4주간 매일 사용한 사용자 <b>200명</b>에게 물었더니 <b>78%</b>가 «집중력이 좋아진 것 같다»고 답했다. 브레인업이 당신의 집중력을 높여 드립니다!»',
+  concepts:['조작적 정의','자기보고의 한계','플라세보','눈가림'],
+  steps:[
+    {kind:'multi',
+     prompt:'이 광고의 <b>설계 결함</b>을 모두 찾아라.',
+     sub:'표본 수에 속지 말 것. 200명은 적지 않다.',
+     options:[
+       {t:'«좋아진 것 같다»는 주관적 자기보고일 뿐, 집중력을 객관적으로 측정하지 않았다.', cat:'meas', ok:true, why:'느낌은 측정이 아니다. 집중력을 «잴 수 있는» 방식으로 정의해야 한다(조작적 정의).'},
+       {t:'앱을 안 쓰거나 가짜 앱을 쓴 대조군이 없어 플라세보(기대) 효과를 걸러내지 못한다.', cat:'ctrl', ok:true, why:'«돈 주고 산 앱이 효과 있겠지»라는 기대만으로도 «좋아졌다»고 답할 수 있다.'},
+       {t:'돈과 시간을 들였으니 효과를 봤다고 믿고 싶은 기대가 답에 섞인다.', cat:'ctrl', ok:true, why:'기대 편향이다. 눈가림과 대조군으로 걸러야 한다.'},
+       {t:'200명은 표본이 너무 적어 결과를 믿을 수 없다.', cat:'samp', ok:false, why:'함정! 200명은 결코 적지 않다. 문제는 수가 아니라 측정 방식이다.'},
+       {t:'4주는 집중력을 측정하기에 지나치게 긴 기간이다.', cat:'meas', ok:false, why:'함정! 기간 길이는 핵심 결함이 아니다.'},
+     ],
+     pass:'핵심은 <b>측정</b>과 <b>대조</b>. «느낌»을 «객관적 점수»로 바꾸지 않으면 어떤 결론도 흔들린다.'},
+    {kind:'single',
+     tag:'조작적 정의 · DEFINE', prompt:'«집중력»을 객관적으로 재려면 어떤 <b>조작적 정의</b>가 가장 적절할까?',
+     options:[
+       {t:'정해진 집중력 과제(예: 일정 시간 동안 특정 기호 찾기 검사)의 «정답 수·반응 시간»처럼, 누가 측정해도 같게 나오는 수치로 정의한다.', ok:true, why:'관찰자가 달라도 같은 값이 나오는 «측정 가능한 절차»가 좋은 조작적 정의다.'},
+       {t:'«사용자가 스스로 느낀 집중력 만족도»를 그대로 점수로 쓴다.', ok:false, why:'다시 주관적 자기보고로 돌아가 버린다.'},
+       {t:'«앱 사용 시간이 길수록 집중력이 높다»고 정의한다.', ok:false, why:'재려는 결과(집중력)와 원인(사용 시간)을 뒤섞은 정의다.'},
+     ]},
+    {kind:'single',
+     tag:'재설계 · REDESIGN', prompt:'심사관의 <b>재설계</b> 제안으로 가장 알맞은 것은?',
+     options:[
+       {t:'참가자를 무작위로 나눠 한쪽은 브레인업, 한쪽은 겉보기 똑같은 가짜 앱을 쓰게 하고(눈가림), 4주 전후로 «객관적 집중력 검사 점수»를 비교한다.', ok:true, why:'대조군·눈가림·객관적 측정을 모두 갖춘 설계다.'},
+       {t:'더 많은 사용자에게 «좋아진 것 같나요?»를 다시 물어본다.', ok:false, why:'자기보고·대조군 문제가 그대로 남는다.'},
+       {t:'브레인업을 가장 오래 쓴 사용자만 골라 점수를 낸다.', ok:false, why:'전형적인 선택 편향이다.'},
+     ]},
+  ],
+  lesson:'«느낌»은 가설의 출발점은 되어도 증거는 못 된다. 추상적인 것을 <b>잴 수 있는 것</b>으로 바꾸는 순간, 비로소 과학이 시작된다.'},
+];
+
+/* =========================================================
+   ENGINE
+========================================================= */
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+let ci=0, si=0;
+let earned=0;
+let TOTAL=0; CASES.forEach(c=>c.steps.forEach(st=>{ TOTAL += st.kind==='multi'? st.options.filter(o=>o.ok).length : 1; }));
+const caseDone=CASES.map(()=>false);
+const gotConcepts=new Set();
+let sel=new Set(), answered=false, firstWrong=false;
+
+/* ----- player / persistence ----- */
+let playerName='', issuedDate=null, certId=null;
+const LS_KEY='ttc_lv2_v1';
+const CERT_IMG='img/cert-emblem.png';   /* GitHub Pages 상대경로 */
+
+function saveState(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      name:playerName, caseDone, earned, issuedDate, certId
+    }));
+  }catch(e){/* localStorage 불가 시 세션 내에서만 진행 */}
+}
+function loadState(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw) return false;
+    const s=JSON.parse(raw);
+    if(s.name) playerName=s.name;
+    if(Array.isArray(s.caseDone)) s.caseDone.forEach((v,i)=>{ if(i<caseDone.length) caseDone[i]=!!v; });
+    if(typeof s.earned==='number') earned=s.earned;
+    if(s.issuedDate) issuedDate=s.issuedDate;
+    if(s.certId) certId=s.certId;
+    caseDone.forEach((d,i)=>{ if(d) CASES[i].concepts.forEach(x=>gotConcepts.add(x)); });
+    return true;
+  }catch(e){ return false; }
+}
+function makeCertId(){
+  const y=new Date().getFullYear();
+  const n=Math.floor(Math.random()*90000)+10000;
+  return `DR-${y}-${n}`;
+}
+function ensureCert(){
+  if(caseDone.every(Boolean)){
+    if(!issuedDate) issuedDate=new Date().toISOString();
+    if(!certId) certId=makeCertId();
+  }
+}
+function fmtDate(iso){
+  const d=iso?new Date(iso):new Date();
+  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
+}
+function computeRank(){
+  const got=Math.min(earned,TOTAL), pct=TOTAL?got/TOTAL:0;
+  const stars=pct>=0.9?3:pct>=0.65?2:1;
+  const rank=stars===3?'수석 심사관':stars===2?'정 심사관':'견습 심사관';
+  const rankEn=stars===3?'CHIEF REVIEWER':stars===2?'REVIEWER':'TRAINEE';
+  return {got,pct,stars,rank,rankEn};
+}
+
+/* tiny audio */
+let actx=null;
+function ac(){ if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}} }
+function beep(f,d,type,g){ if(!actx)return; const o=actx.createOscillator(),v=actx.createGain();
+  o.type=type||'sine'; o.frequency.value=f; o.connect(v); v.connect(actx.destination);
+  v.gain.setValueAtTime(g||.05,actx.currentTime); v.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+(d||.12));
+  o.start(); o.stop(actx.currentTime+(d||.12)); }
+const S={ tap:()=>beep(420,.05,'square',.03), good:()=>{beep(660,.1,'sine',.05);setTimeout(()=>beep(880,.12,'sine',.05),90);},
+  bad:()=>beep(150,.18,'sawtooth',.05), stamp:()=>{beep(200,.07,'square',.06);setTimeout(()=>beep(90,.16,'square',.06),70);},
+  win:()=>{[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.16,'sine',.06),i*120));} };
+
+function show(id){ $$('.screen').forEach(s=>s.classList.remove('on')); $('#'+id).classList.add('on'); window.scrollTo({top:0,behavior:'smooth'}); renderPills(); }
+function renderScore(){ $('#scoreVal').textContent=earned; }
+function renderPills(){ const p=$('#pills'); p.innerHTML='';
+  CASES.forEach((_,i)=>{ const d=document.createElement('div');
+    d.className='pp'+(caseDone[i]?' done':'')+(i===ci && $('#case').classList.contains('on')?' cur':''); p.appendChild(d); }); }
+
+function updateCertBtn(){
+  const b=$('#certBtn'); if(!b)return;
+  const done=caseDone.filter(Boolean).length, all=done===CASES.length;
+  b.classList.toggle('ready',all);
+  b.title=all?'설계 심사관 자격증 보기':`자격증 (사건 ${done}/${CASES.length} 해결 시 발급)`;
+}
+function refreshNameChip(){
+  const c=$('#nameChip'); if(!c)return;
+  if(playerName){ $('#nameChipText').textContent=playerName; c.style.display='inline-flex'; }
+  else c.style.display='none';
+}
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  const g=$('#caseGrid'); g.innerHTML='';
+  CASES.forEach((c,i)=>{
+    const dots=c.concepts.slice(0,4).map((_,k)=>{ const keys=Object.keys(CAT); const col=CAT[keys[(i+k)%keys.length]].color; return `<span class="cdot" style="background:${col}"></span>`; }).join('');
+    const b=document.createElement('button');
+    b.className='case-card card'+(caseDone[i]?' done':'');
+    b.innerHTML=`<div class="tab">${c.code}</div><div class="seal">✓</div>
+      <div class="inner"><span class="ktag">${c.tag}</span><h3>${c.title}</h3>
+      <p class="cdesc">${c.cdesc}</p><div class="dots">${dots}</div></div>`;
+    b.onclick=()=>{ac();S.tap();openCase(i);};
+    g.appendChild(b);
+  });
+  const gg=$('#glossGrid'); gg.innerHTML=GLOSSARY.map(x=>`
+    <div class="gloss-item" style="border-left-color:${CAT[x.c].color}">
+      <div class="gt">${x.t}</div><div class="gd">${x.d}</div></div>`).join('');
+  renderCertHome();
+  refreshNameChip();
+  updateCertBtn();
+}
+function renderCertHome(){
+  const el=$('#certHome'); if(!el)return;
+  const done=caseDone.filter(Boolean).length, total=CASES.length, ready=done===total;
+  el.classList.toggle('ready',ready);
+  if(ready){
+    el.innerHTML=`<div class="ch-ico">🏅</div>
+      <div class="ch-main"><div class="ch-t">설계 심사관 인증서 발급 가능!</div>
+      <div class="ch-d">${escapeHtml(playerName||'심사관')} 님, 모든 사건을 종결했어요. 자격증을 확인하세요.</div></div>
+      <div class="ch-go">발급 →</div>`;
+  } else {
+    el.innerHTML=`<div class="ch-ico">🔒</div>
+      <div class="ch-main"><div class="ch-t">설계 심사관 인증서</div>
+      <div class="ch-d">사건 ${done} / ${total} 해결 · 모든 사건을 종결하면 자격증이 발급됩니다.</div>
+      <div class="ch-bar"><i style="width:${Math.round(done/total*100)}%"></i></div></div>
+      <div class="ch-go mono" style="color:var(--ink-soft)">${done}/${total}</div>`;
+  }
+}
+function toggleGloss(){ S.tap(); $('#gloss').classList.toggle('open');
+  $('.gloss-btn').textContent = $('#gloss').classList.contains('open')?'📖 심화 용어 접기':'📖 심화 용어 펼치기'; }
+function toHome(){ S.tap(); renderHome(); show('home'); renderPills(); }
+
+/* ---------- ONBOARDING ---------- */
+function renderOnboard(isEdit){
+  const v = isEdit ? escapeHtml(playerName) : '';
+  $('#onboardBody').innerHTML=`
+   <div class="card onboard">
+     <div class="ob-badge">L2</div>
+     <div class="ob-tag">${isEdit?'심사관 정보 수정':'심사관 등록 · REVIEWER REGISTRATION'}</div>
+     <h2>${isEdit?'이름을 바꿀까요?':'설계 감별소에 오신 걸 환영합니다'}</h2>
+     <p>${isEdit
+        ?'새 이름이나 모둠명을 입력하면 자격증과 진행 기록에 반영됩니다.'
+        :'심사를 시작하기 전, 인증서에 새겨질 <b>이름</b> 또는 <b>모둠명</b>을 적어 주세요. 진행 상황은 이 기기에 자동 저장돼요.'}</p>
+     <div class="ob-err" id="obErr"></div>
+     <input class="ob-input" id="nameInput" maxlength="24" placeholder="예) 조승재 또는 3모둠" value="${v}" autocomplete="off" inputmode="text">
+     <div class="ob-hint">최대 24자 · 진행 기록 자동 저장</div>
+     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+       ${isEdit?'<button class="btn ghost" onclick="cancelOnboard()">취소</button>':''}
+       <button class="btn accent" onclick="submitName()">${isEdit?'저장하기':'심사 시작하기 →'}</button>
+     </div>
+   </div>`;
+  setTimeout(()=>{
+    const i=$('#nameInput');
+    if(i){ i.focus(); i.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submitName(); } }); }
+  },60);
+}
+function submitName(){
+  const i=$('#nameInput'); const val=(i?i.value:'').trim();
+  if(!val){ const e=$('#obErr'); if(e)e.textContent='이름이나 모둠명을 입력해 주세요.'; if(i)i.focus(); S.bad(); return; }
+  playerName=val.slice(0,24);
+  saveState(); S.good();
+  renderHome(); refreshNameChip(); updateCertBtn();
+  show('home');
+}
+function cancelOnboard(){ S.tap(); show('home'); }
+function changeName(){ S.tap(); renderOnboard(true); show('onboard'); }
+
+/* ---------- CASE ---------- */
+function openCase(i){ ci=i; si=0; renderStep(); show('case'); }
+
+function dossierHTML(c){
+  const intro = c.intro ? `<div class="intro">${c.intro}</div>` : '';
+  const img = c.img ? `<img class="story-img" src="${c.img}" alt="${escapeHtml(c.title)} 삽화" loading="lazy" onerror="this.remove()">` : '';
+  return `<div class="dossier ${c.doss_kind}">
+    <div class="dlabel">📄 ${c.dlabel}</div>
+    ${img}
+    <div class="dbody">${c.doc}</div>${intro}</div>`;
+}
+function renderStep(){
+  const c=CASES[ci], st=c.steps[si];
+  sel=new Set(); answered=false; firstWrong=false;
+  const head=`<div class="case-head">
+      <div><span class="label">${c.code} · 결함 심사</span><h2>${c.title}</h2></div>
+      <div class="step-chip">${si+1} / ${c.steps.length}</div></div>`;
+  const body = st.kind==='multi' ? multiHTML(st) : singleHTML(st);
+  const foot=`<div class="footer-nav"><button class="btn ghost" onclick="toHome()">← 사건 목록</button><div></div></div>`;
+  $('#caseScreen').innerHTML = head + dossierHTML(c) + `<div id="stepArea">${body}</div>` + foot;
+  renderScore(); renderPills();
+}
+
+function multiHTML(st){
+  const rows=st.options.map((o,idx)=>`
+    <button class="opt" id="o${idx}" onclick="toggleOpt(${idx})">
+      <span class="box"></span>
+      <span class="txt">${o.t}</span>
+      <span class="cat" style="background:${CAT[o.cat].color}">${CAT[o.cat].label}</span>
+      <span class="why"></span>
+    </button>`).join('');
+  return `<div class="card prompt"><div class="scn">진단 · DIAGNOSE (복수 선택)</div>
+      <p class="q">${st.prompt}</p>${st.sub?`<p class="sub">${st.sub}</p>`:''}</div>
+    <div class="opts" id="opts">${rows}</div>
+    <button class="btn accent" id="submitBtn" onclick="submitMulti()">진단 제출</button>
+    <div class="fb" id="fb"></div>`;
+}
+function toggleOpt(idx){ if(answered)return; S.tap();
+  const el=$('#o'+idx);
+  if(sel.has(idx)){ sel.delete(idx); el.classList.remove('sel'); }
+  else { sel.add(idx); el.classList.add('sel'); } }
+
+function submitMulti(){
+  const st=CASES[ci].steps[si];
+  answered=true;
+  const C=st.options.filter(o=>o.ok).length;
+  let nc=0,nw=0;
+  st.options.forEach((o,idx)=>{
+    const el=$('#o'+idx); el.classList.remove('sel'); el.classList.add('lock','reveal');
+    el.querySelector('.why').textContent=o.why;
+    const chosen=sel.has(idx);
+    if(o.ok){ el.classList.add(chosen?'hit':'miss'); if(chosen)nc++; }
+    else { if(chosen){ el.classList.add('wrong'); nw++; } else el.classList.add('dim'); }
+  });
+  const stepEarned=Math.max(0,Math.min(C,nc-nw));
+  earned+=stepEarned; renderScore();
+  const perfect = (nc===C && nw===0);
+  const fb=$('#fb'); fb.className='fb show '+(perfect?'ok':'no');
+  let tally=`결함 ${C}개 중 ${nc}개 적중`; if(nw>0) tally+=` · 잘못 지목 ${nw}개`;
+  fb.innerHTML=`<div class="tally">🔎 ${tally}</div>${perfect?'<b>완벽한 진단! ✓</b> ':'<b>여기서 한 번 더 따져 보자.</b> '}${st.pass}`;
+  $('#submitBtn').style.display='none';
+  fb.insertAdjacentHTML('beforeend', `<div class="nextwrap"><button class="btn" onclick="nextStep()">다음 →</button></div>`);
+  if(perfect)S.good(); else S.bad();
+}
+
+function singleHTML(st){
+  const marks=['A','B','C','D'];
+  const rows=st.options.map((o,idx)=>`
+    <button class="opt" id="o${idx}" onclick="pickSingle(${idx})">
+      <span class="box">${marks[idx]}</span>
+      <span class="txt">${o.t}</span>
+      <span class="why"></span>
+    </button>`).join('');
+  const lbl = st.tag || (si===0 ? '평가 · EVALUATE' : '재설계 · REDESIGN');
+  return `<div class="card prompt"><div class="scn">${lbl}</div>
+      <p class="q">${st.prompt}</p></div>
+    <div class="opts" id="opts">${rows}</div>
+    <div class="fb" id="fb"></div>`;
+}
+function pickSingle(idx){
+  if(answered)return; S.tap();
+  const st=CASES[ci].steps[si], o=st.options[idx], el=$('#o'+idx);
+  if(o.ok){
+    answered=true; el.classList.add('correct','reveal'); el.querySelector('.why').textContent=o.why;
+    $$('#opts .opt').forEach((x,j)=>{ if(j!==idx)x.classList.add('dim','lock'); });
+    if(!firstWrong){ earned++; renderScore(); }
+    const fb=$('#fb'); fb.className='fb show ok';
+    fb.innerHTML=`<b>${firstWrong?'좋아, 이제 맞췄어!':'정확한 판단! ✓'}</b> ${o.why}
+      <div class="nextwrap"><button class="btn" onclick="nextStep()">다음 →</button></div>`;
+    S.good();
+  } else {
+    firstWrong=true; el.classList.add('wrong','reveal','shake'); el.querySelector('.why').textContent=o.why;
+    setTimeout(()=>el.classList.remove('shake'),420);
+    el.classList.add('lock');
+    const fb=$('#fb'); fb.className='fb show no';
+    fb.innerHTML=`<b>다시 따져 보자.</b> ${o.why}`;
+    S.bad();
+  }
+}
+
+function nextStep(){
+  S.tap();
+  si++;
+  if(si < CASES[ci].steps.length){ renderStep(); }
+  else resolveCase();
+}
+
+function resolveCase(){
+  const c=CASES[ci];
+  caseDone[ci]=true; c.concepts.forEach(x=>gotConcepts.add(x));
+  ensureCert(); saveState(); updateCertBtn();
+  const keys=Object.keys(CAT);
+  const chips=c.concepts.map((x,k)=>`<span class="chip" style="background:${CAT[keys[(ci+k)%keys.length]].color}">${x}</span>`).join('');
+  const last = ci===CASES.length-1;
+  $('#caseScreen').innerHTML=`
+    <div class="case-head"><div><span class="label">${c.code} · 종결</span><h2>${c.title}</h2></div></div>
+    <div class="card resolve">
+      <div class="stamp ${ci%2?'blue':''}" id="stamp">${ci%2?'재설계 완료':'결함 규명'}</div>
+      <div class="ricon">🗂️</div>
+      <h3>사건 종결</h3>
+      <div class="lesson">💡 ${c.lesson}</div>
+      <div class="chips">${chips}</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn ghost" onclick="toHome()">🗂️ 사건 목록</button>
+        <button class="btn accent" onclick="nextCase()">${last?'최종 평가 보기 🏅':'다음 사건 →'}</button>
+      </div></div>`;
+  show('case'); renderPills();
+  setTimeout(()=>{ $('#stamp').classList.add('show'); S.stamp(); },260);
+}
+function nextCase(){ S.tap(); if(ci<CASES.length-1) openCase(ci+1); else showResult(); }
+
+/* ---------- CERTIFICATE ---------- */
+function openCert(){ S.tap(); renderCert(); show('cert'); }
+function renderCert(){
+  const allDone=caseDone.every(Boolean);
+  const el=$('#certBody');
+  if(!allDone){
+    const done=caseDone.filter(Boolean).length, total=CASES.length;
+    el.innerHTML=`
+      <div class="card cert-locked">
+        <div class="lk">🔒</div>
+        <h3>아직 발급 전이에요</h3>
+        <p>모든 사건을 종결한 «설계 심사관»에게만 인증서가 수여됩니다. 남은 사건을 마저 해결해 보세요.</p>
+        <div class="prog">사건 ${done} / ${total} 해결</div>
+        <button class="btn accent" onclick="toHome()">🗂️ 사건 목록으로</button>
+      </div>`;
+    return;
+  }
+  ensureCert(); saveState();
+  const {got,stars,rank,rankEn}=computeRank();
+  let starHtml=''; for(let i=0;i<3;i++) starHtml += i<stars?'★':'☆';
+  el.innerHTML=`
+   <div class="cert-actions no-print">
+     <button class="btn ghost" onclick="toHome()">← 돌아가기</button>
+     <button class="btn accent" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
+   </div>
+   <div id="certPrintArea">
+     <div class="cert">
+       <div class="cert-frame">
+         <div class="cert-stamp2">인증<br>PASSED</div>
+         <img class="cert-emblem" src="${CERT_IMG}" alt="설계 감별소 인증 엠블럼" onerror="this.style.display='none'">
+         <div class="cert-org">탐구 훈련소 · INQUIRY TRAINING CAMP</div>
+         <div class="cert-div">LV.2 설계 감별소 · DESIGN REVIEW DIVISION</div>
+         <h2 class="cert-title">설계 심사관 인증서</h2>
+         <div class="cert-titleen">CERTIFICATE OF DESIGN REVIEW</div>
+         <p class="cert-body">아래 심사관은 「설계 감별소」의 모든 사건을 해결하여,<br>실험 설계의 결함을 진단하고 더 나은 연구를 설계하는<br>«설계 심사관»의 자격을 갖추었기에 이 증서를 수여합니다.</p>
+         <div class="cert-name">${escapeHtml(playerName||'심사관')}</div>
+         <div class="cert-rule"></div>
+         <div class="cert-rank"><span class="cert-stars">${starHtml}</span> ${rank} · ${rankEn}</div>
+         <div class="cert-score">심사 점수 ${got} / ${TOTAL} · 사건 ${CASES.length}건 종결</div>
+         <div class="cert-foot">
+           <div><span class="cf-k">발급일</span><span class="cf-v">${fmtDate(issuedDate)}</span></div>
+           <div><span class="cf-k">인증번호</span><span class="cf-v mono">${certId}</span></div>
+           <div><span class="cf-k">발급</span><span class="cf-v">해누리중학교 · 과학이조선생</span></div>
+         </div>
+       </div>
+     </div>
+   </div>`;
+}
+
+/* ---------- RESULT ---------- */
+function showResult(){
+  S.win();
+  ensureCert(); saveState();
+  const {got,stars,rank,rankEn}=computeRank();
+  const blurb = stars===3?'결함을 꿰뚫고 설계까지 바로잡았어. 어떤 연구도 너의 눈을 통과하기 어렵겠는걸.'
+            : stars===2?'핵심 결함을 잘 짚었어. 함정 몇 개만 더 가려내면 완벽해.'
+            : '기본기는 통과! 해설을 다시 읽고 재도전하면 진단력이 훨씬 날카로워질 거야.';
+  let st=''; for(let i=0;i<3;i++) st+=`<span class="star" style="animation-delay:${i*.18}s">${i<stars?'⭐':'☆'}</span>`;
+  $('#resultBody').innerHTML=`<div class="card result">
+    <div class="rank-stamp">LV.2 · ${rankEn}</div>
+    <div class="stars-r">${st}</div>
+    <h2>${rank}</h2>
+    <p class="scoreline">심사관 <b>${escapeHtml(playerName||'—')}</b><br>${blurb}<br>심사 점수 <b>${got} / ${TOTAL}</b> · 사건 ${CASES.length}건 종결</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn accent" onclick="openCert()">🏅 자격증 받기</button>
+      <button class="btn ghost" onclick="confirmReset()">🔄 다시 도전</button>
+      <button class="btn ghost" onclick="toHome()">🗂️ 사건 목록</button>
+    </div>
+    <div class="recap">
+      <h4>🔍 심사관의 체크리스트</h4>
+      • <b style="color:var(--c-ctrl)">대조군</b> 없이는 «변화»를 «효과»라 부를 수 없다.<br>
+      • <b style="color:var(--c-conf)">교란변인</b>을 같게 맞춰야 원인을 가릴 수 있다.<br>
+      • <b style="color:var(--c-ctrl)">플라세보·눈가림</b>으로 기대와 편견을 걸러낸다.<br>
+      • <b style="color:var(--c-samp)">표본·무작위 배정</b>이 우연과 편향을 줄인다.<br>
+      • 추상적인 것은 <b style="color:var(--c-meas)">조작적 정의</b>로 잴 수 있게 만든다.<br>
+      • <b style="color:var(--c-corr)">상관 ≠ 인과</b> — 함께 변해도 원인은 따로 있을 수 있다.<br>
+      • 분명한 증거도 <b style="color:var(--c-auth)">설명·재현·수용</b>을 거쳐야 받아들여진다.
+      <div class="nxt">🛠️ <b>LV.3로 가는 길:</b> 이제 네가 «출제자»가 될 차례. 직접 결함 있는 광고·연구를 만들어 친구를 심사하게 해 보자 — 평가를 «설계»해 보는 것이야말로 최고 난도의 탐구야.</div>
+    </div>
+    <p class="credit">탐구 훈련소 LV.2 · 제작 — 해누리중학교 조승재(과학이조선생)</p>
+  </div>`;
+  show('result');
+}
+function confirmReset(){
+  if(confirm('진행 기록과 자격증이 초기화됩니다. 처음부터 다시 도전할까요?\n(이름은 그대로 유지됩니다)')) resetAll();
+}
+function resetAll(){
+  caseDone.fill(false); gotConcepts.clear(); earned=0; ci=0; si=0;
+  issuedDate=null; certId=null;
+  saveState();
+  renderScore(); renderHome(); updateCertBtn(); show('home');
+}
+
+/* ---------- INIT ---------- */
+function init(){
+  loadState();
+  renderHome(); renderScore(); renderPills(); updateCertBtn();
+  if(playerName){ refreshNameChip(); show('home'); }
+  else { renderOnboard(false); show('onboard'); }
+}
+init();
+document.addEventListener('pointerdown',()=>ac(),{once:true});
+</script>
+</body>
+</html>
