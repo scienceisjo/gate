@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>과학사 탐험대 — 나라면? vs 과학자</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+:root{
+  --paper:#e9e0c8; --paper2:#f3ecd9; --ink:#241f33; --ink-soft:#5b5470;
+  --line:rgba(36,31,51,.14); --line-strong:rgba(36,31,51,.26);
+  --card:#fbf7ec; --shadow:rgba(36,31,51,.18);
+  --phys:#3b5bdb; --chem:#e8632b; --bio:#2f9e44; --earth:#d99a16;
+  --manip:#e8542b; --ctrl:#4845d6; --dep:#0e9488; --indep:#6b7280;
+  --green:#16a34a; --red:#dc2626; --gold:#e0a818; --grass:#6aa84f; --dirt:#8a6a40;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:'Pretendard Variable',Pretendard,sans-serif;color:var(--ink);background:var(--paper);
+  overflow:hidden;-webkit-user-select:none;user-select:none}
+.mono{font-family:'JetBrains Mono',monospace;letter-spacing:.02em}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input{font-family:inherit}
+.app{height:100vh;height:100dvh;display:flex;flex-direction:column}
+
+/* topbar */
+.topbar{flex:none;height:56px;display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:0 18px;background:var(--ink);color:var(--paper);box-shadow:0 3px 0 rgba(0,0,0,.25);z-index:30}
+.tb-l{display:flex;align-items:center;gap:11px;cursor:pointer}
+.tb-l .logo{width:36px;height:36px;background:var(--gold);display:grid;place-items:center;font-size:18px;
+  box-shadow:3px 3px 0 rgba(0,0,0,.3);image-rendering:pixelated}
+.tb-l h1{font-family:'Jua',sans-serif;font-size:18px;line-height:1}
+.tb-l p{font-size:9.5px;color:#b9b1cc;font-family:'JetBrains Mono',monospace;letter-spacing:.08em;margin-top:2px}
+.tb-r{display:flex;align-items:center;gap:9px}
+.chip{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.18);padding:7px 12px;display:flex;align-items:center;gap:6px}
+.chip b{color:var(--gold)}
+.tb-btn{font-size:13.5px;font-weight:700;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  padding:8px 13px}
+.tb-btn:active{transform:translateY(1px)}
+
+.stage{flex:1;position:relative;overflow:hidden}
+.screen{position:absolute;inset:0;display:none;animation:fade .4s ease both}
+.screen.on{display:block}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+/* pixel/voxel buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 24px;font-weight:800;font-size:16px;
+  background:var(--ink);color:var(--paper);box-shadow:0 5px 0 #15111f;transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #15111f}
+.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--ink);box-shadow:0 5px 0 var(--shadow)}
+.btn.ghost:active{box-shadow:0 1px 0 var(--shadow)}
+.btn.gold{background:var(--gold);color:#3a2c00;box-shadow:0 5px 0 #a9760a}
+.btn.gold:active{box-shadow:0 1px 0 #a9760a}
+.btn:disabled{opacity:.4;pointer-events:none}
+.btn.sm{padding:9px 15px;font-size:14px;box-shadow:0 4px 0 var(--shadow)}
+
+/* ---------- LOGIN ---------- */
+.login{height:100%;display:grid;place-items:center;padding:20px;background:
+  linear-gradient(180deg,#8fc1e8 0%,#bfe0c8 55%,var(--grass) 55%,var(--grass) 100%)}
+.login .box{width:min(480px,92vw);background:var(--card);border:3px solid var(--ink);
+  padding:34px 32px;text-align:center;box-shadow:8px 8px 0 var(--shadow)}
+.login .em{font-size:50px}
+.login h2{font-family:'Jua',sans-serif;font-size:30px;margin:8px 0 6px}
+.login p{font-size:15px;color:var(--ink-soft);line-height:1.65;margin-bottom:18px}
+.login input{width:100%;border:3px solid var(--line-strong);padding:14px 16px;font-size:17px;
+  text-align:center;background:#fff;margin-bottom:14px}
+.login input:focus{outline:none;border-color:var(--gold)}
+.login .net{margin-top:14px;font-size:11.5px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace}
+
+/* ---------- MAP (voxel terrain) ---------- */
+.map{position:absolute;inset:0;background:
+  linear-gradient(180deg,#8fc1e8 0,#a9d3ea 38%,#bfe0c8 38%,#bfe0c8 100%);overflow:hidden}
+.map .clouds{position:absolute;inset:0;pointer-events:none;opacity:.8}
+.map-title{position:absolute;top:14px;left:0;right:0;text-align:center;pointer-events:none;z-index:2}
+.map-title h2{font-family:'Jua',sans-serif;font-size:25px;color:#243b55;text-shadow:2px 2px 0 #fff}
+.map-title p{font-size:13.5px;color:#33506e;margin-top:3px;font-weight:600}
+.map svg.paths{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.node{position:absolute;transform:translate(-50%,-50%);width:172px;text-align:center;cursor:pointer;transition:transform .12s;z-index:3}
+.node:hover{transform:translate(-50%,-50%) scale(1.05)}
+.node .disc{width:84px;height:84px;margin:0 auto;display:grid;place-items:center;font-size:38px;
+  background:var(--card);border:4px solid var(--ac);box-shadow:0 7px 0 var(--shadow);position:relative;image-rendering:pixelated}
+.node .yr{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#fff;background:var(--ac);
+  padding:3px 10px;position:absolute;top:-11px;left:50%;transform:translateX(-50%);white-space:nowrap}
+.node .nm{font-weight:800;font-size:15px;margin-top:10px;line-height:1.2;color:#243b55;text-shadow:1px 1px 0 #fff}
+.node .sub{font-size:12px;color:#3a536e;margin-top:2px;font-weight:600}
+.node .done{position:absolute;right:-8px;bottom:-8px;width:28px;height:28px;background:var(--green);
+  color:#fff;display:none;place-items:center;font-size:16px;box-shadow:0 0 0 3px var(--card)}
+.node.cleared .done{display:grid}
+.node.cleared .disc{opacity:.78}
+.hero-tok{position:absolute;transform:translate(-50%,-60%);width:46px;height:60px;z-index:6;
+  transition:left .16s linear,top .16s linear;pointer-events:none;
+  filter:drop-shadow(0 5px 2px rgba(0,0,0,.3));image-rendering:pixelated}
+.node.near .disc{box-shadow:0 7px 0 var(--shadow),0 0 0 5px rgba(224,168,24,.7);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 7px 0 var(--shadow),0 0 0 5px rgba(224,168,24,.7)}50%{box-shadow:0 7px 0 var(--shadow),0 0 0 10px rgba(224,168,24,.22)}}
+#mapHint{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:6;background:var(--ink);color:var(--paper);
+  font-weight:800;font-size:14px;padding:9px 16px;box-shadow:0 4px 0 rgba(0,0,0,.3);opacity:0;transition:opacity .2s;pointer-events:none}
+#mapHint.on{opacity:1}
+.comic{display:block;width:100%;max-height:230px;object-fit:contain;border:3px solid var(--ink);background:#fff;margin-bottom:14px}
+.comic-slot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:140px;
+  border:3px dashed var(--line-strong);background:var(--paper2);color:var(--ink-soft);font-weight:700;font-size:15px;margin-bottom:14px;text-align:center}
+.comic-slot span{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-soft)}
+.basecamp{position:absolute;transform:translate(-50%,-50%);text-align:center;pointer-events:none;z-index:2}
+.basecamp .b{font-size:30px;image-rendering:pixelated}.basecamp .t{font-family:'JetBrains Mono',monospace;font-size:10px;color:#33506e;font-weight:700}
+
+/* ---------- INQUIRY ---------- */
+.inq{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr)}
+.scene{position:relative;overflow:hidden;display:flex;flex-direction:column;border-right:3px solid var(--ink);min-height:0;min-width:0}
+.scene .sc-top{flex:none;padding:14px 20px;display:flex;align-items:center;gap:12px;background:var(--ac);color:#fff}
+.scene .sc-top .ic{font-size:30px}
+.scene .sc-top .yr{font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:700;opacity:.9}
+.scene .sc-top h3{font-family:'Jua',sans-serif;font-size:19px;line-height:1.1}
+.scene .sc-top .pl{font-size:11.5px;opacity:.9;margin-top:1px}
+.scene .canvas{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  background:linear-gradient(180deg,#cfe6f2 0,#dfeec9 60%,var(--grass) 60%,var(--grass) 100%)}
+.scene .canvas.has-img{background-size:cover;background-position:center}
+.scene .canvas.has-img::before{content:"";position:absolute;inset:0;background:rgba(251,247,236,.62);z-index:0}
+.scene .canvas svg{position:relative;z-index:1}
+.scene .canvas svg{max-width:96%;max-height:94%}
+.exp-note{position:absolute;top:12px;left:12px;right:12px;font-size:13px;color:#fff;font-weight:600;
+  background:rgba(36,31,51,.7);padding:8px 12px;line-height:1.45;z-index:2}
+
+.panel{position:relative;display:flex;flex-direction:column;background:var(--card);min-width:0;min-height:0;overflow:hidden}
+.p-prog{flex:none;display:flex;align-items:center;gap:9px;padding:11px 20px;border-bottom:2px solid var(--line)}
+.p-prog .dots{display:flex;gap:5px;flex:1}
+.p-prog .pd{height:8px;flex:1;background:var(--line-strong);transition:.3s}
+.p-prog .pd.on{background:var(--ac)}
+.p-prog .lab{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--ink-soft)}
+.p-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:22px 24px}
+.p-foot{flex:none;display:flex;justify-content:space-between;gap:10px;padding:14px 20px;border-top:2px solid var(--line)}
+
+/* === bigger typography === */
+.beat-eye{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--ac);letter-spacing:.06em}
+.beat-h{font-family:'Jua',sans-serif;font-size:27px;margin:6px 0 14px;line-height:1.22}
+.beat-p{font-size:17px;line-height:1.75;margin-bottom:15px}
+.beat-p b{font-weight:800}
+
+/* story */
+.story{font-size:18.5px;line-height:1.95;margin-bottom:16px}
+.story p{margin-bottom:12px}
+.story .hl{background:linear-gradient(transparent 62%,#ffe49b 62%);font-weight:700}
+.tts{display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--paper);padding:11px 15px;margin-bottom:14px}
+.tts .play{font-size:15px;font-weight:800;display:flex;align-items:center;gap:7px}
+.tts .bar{flex:1;height:8px;background:rgba(255,255,255,.18);overflow:hidden}
+.tts .bar > i{display:block;height:100%;width:0;background:var(--gold);transition:width .25s linear}
+.tts .st{font-family:'JetBrains Mono',monospace;font-size:11px;color:#cfc7dd}
+
+/* options bigger */
+.opt{display:flex;align-items:flex-start;gap:13px;width:100%;text-align:left;padding:16px 17px;
+  background:#fff;border:3px solid var(--line-strong);font-size:17px;font-weight:600;line-height:1.45;margin-bottom:11px;
+  box-shadow:0 4px 0 var(--shadow);transition:transform .1s,border-color .12s,background .12s}
+.opt:active{transform:translateY(2px)}
+.opt .mk{flex:none;width:30px;height:30px;border:3px solid var(--line-strong);display:grid;place-items:center;
+  font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--ink-soft)}
+.opt.sel{border-color:var(--ink)}
+.opt.sel .mk{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.opt.ok{border-color:var(--green);background:#f0fdf4}
+.opt.ok .mk{background:var(--green);border-color:var(--green);color:#fff}
+.opt.bad{border-color:var(--red);background:#fef2f2}
+.opt.bad .mk{background:var(--red);border-color:var(--red);color:#fff}
+.opt.dim{opacity:.5}
+.opt .why{flex-basis:100%;font-size:14px;font-weight:500;color:var(--ink-soft);line-height:1.55;margin-top:6px;
+  padding-top:9px;border-top:2px dashed var(--line-strong);display:none}
+.opt.reveal .why{display:block}
+
+/* hint */
+.hint-btn{font-size:14px;font-weight:700;color:#a9760a;background:#fff5d8;border:2px solid var(--gold);
+  padding:8px 13px;margin-bottom:12px;display:inline-flex;align-items:center;gap:6px}
+.hint-box{display:none;background:#fffaf0;border:2px solid var(--gold);border-left-width:6px;padding:13px 15px;
+  font-size:15px;line-height:1.65;margin-bottom:14px;color:#6b4e0a}
+.hint-box.show{display:block;animation:fade .25s both}
+.hint-box b{color:var(--ink)}
+
+.varhint{background:var(--paper2);border:2px solid var(--line-strong);padding:13px 15px;
+  font-size:15px;line-height:1.6;color:var(--ink-soft);margin-bottom:15px}
+.varhint b{color:var(--ink)}
+.vtag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#fff;padding:3px 9px;margin-right:2px}
+
+.fb{display:none;padding:14px 16px;font-size:15px;line-height:1.6;margin-bottom:8px}
+.fb.show{display:block;animation:fade .3s both}
+.fb.good{background:#ecfdf3;border:2px solid var(--green);color:#0f5132}
+.fb.info{background:#eef2ff;border:2px solid var(--ctrl);color:#3730a3}
+.fb.warn{background:#fff7ed;border:2px solid var(--chem);color:#9a3412}
+
+/* === simulation controls === */
+.simwrap{margin-bottom:14px}
+.ctl{background:#fff;border:2px solid var(--line-strong);padding:13px 15px;margin-bottom:11px}
+.ctl .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ctl .nm{font-weight:800;font-size:15px;display:flex;align-items:center;gap:7px}
+.ctl .val{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--ink)}
+.ctl .role{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#fff;padding:2px 8px}
+input[type=range]{width:100%;height:30px;-webkit-appearance:none;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:12px;background:var(--paper2);border:2px solid var(--line-strong)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;background:var(--ac,var(--ink));
+  border:3px solid var(--ink);margin-top:-9px;box-shadow:2px 2px 0 var(--shadow)}
+input[type=range]::-moz-range-track{height:12px;background:var(--paper2);border:2px solid var(--line-strong)}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;background:var(--ac,var(--ink));border:3px solid var(--ink)}
+.seg{display:flex;gap:0;border:2px solid var(--ink)}
+.seg button{flex:1;padding:11px 8px;font-weight:800;font-size:14.5px;background:#fff;border-right:2px solid var(--ink)}
+.seg button:last-child{border-right:none}
+.seg button.on{background:var(--ac,var(--ink));color:#fff}
+.reading{background:var(--ink);color:var(--paper);padding:13px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}
+.reading .k{font-size:13px;color:#cfc7dd;font-family:'JetBrains Mono',monospace;font-weight:700}
+.reading .v{font-family:'Jua',sans-serif;font-size:24px;color:var(--gold)}
+
+/* report table */
+.report{border:2px solid var(--ink);margin-bottom:8px}
+.report .rhead{background:var(--ink);color:var(--paper);padding:9px 13px;font-weight:800;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.report table{width:100%;border-collapse:collapse;background:#fff;font-size:14px}
+.report th,.report td{border:1px solid var(--line-strong);padding:8px 9px;text-align:center}
+.report th{background:var(--paper2);font-weight:800;font-size:12.5px}
+.report .empty{padding:18px;text-align:center;color:var(--ink-soft);font-size:13.5px}
+.report tr.flash{animation:flash .6s}
+@keyframes flash{from{background:#fff7c4}to{background:#fff}}
+
+/* compare */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:15px}
+.cmp .col{padding:14px 15px;border:3px solid var(--line-strong)}
+.cmp .me{background:#fff7f3;border-color:var(--manip)}
+.cmp .sci{background:#eef2ff;border-color:var(--ctrl)}
+.cmp .col h5{font-size:13px;font-family:'JetBrains Mono',monospace;font-weight:700;margin-bottom:9px}
+.cmp .me h5{color:var(--manip)}.cmp .sci h5{color:var(--ctrl)}
+.cmp .col .row{font-size:14.5px;line-height:1.5;margin-bottom:9px}
+.cmp .col .row:last-child{margin-bottom:0}
+.cmp .col .k{font-weight:800;font-size:12px;color:var(--ink-soft)}
+.insight{background:var(--ink);color:var(--paper);padding:16px 18px;font-size:16px;line-height:1.7;margin-bottom:14px}
+.sci-explain{margin-top:18px;background:#fff;border:2px solid var(--line-strong);border-left:6px solid var(--ac,var(--ink));padding:16px 18px}
+.sci-explain .se-h{font-family:'Jua',sans-serif;font-size:18px;color:var(--ac,var(--ink));margin-bottom:10px}
+.sci-explain p{font-size:15.5px;line-height:1.75;margin-bottom:11px}
+.sci-explain p:last-child{margin-bottom:0}
+.sci-explain b{font-weight:800}
+.sci-explain sub{font-size:.75em}
+.formula{background:var(--paper2);border:2px solid var(--line-strong);padding:12px 14px;margin:12px 0;font-family:'JetBrains Mono',monospace}
+.formula .frow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:5px 0;flex-wrap:wrap}
+.formula .frow.hi{background:#fff7d8;margin:4px -8px;padding:7px 8px;border:1px solid var(--gold)}
+.formula .fl{font-size:13px;color:var(--ink-soft);font-family:'Pretendard Variable',Pretendard,sans-serif;font-weight:700}
+.formula .fe{font-size:18px;font-weight:700;color:var(--ink)}
+.formula .fnote{font-size:12px;color:var(--ink-soft);font-family:'Pretendard Variable',Pretendard,sans-serif;padding:2px 0 6px}
+.insight .h{font-family:'Jua',sans-serif;font-size:17px;margin-bottom:7px;color:var(--gold)}
+
+/* overlays */
+.ov{position:absolute;inset:0;display:none;place-items:center;background:rgba(36,31,51,.6);z-index:40;padding:20px}
+.ov.on{display:grid;animation:fade .3s both}
+.ov .box{width:min(560px,95vw);max-height:88vh;overflow-y:auto;background:var(--card);border:3px solid var(--ink);padding:0;box-shadow:10px 10px 0 rgba(0,0,0,.3)}
+.award .box{padding:30px;text-align:center;border-color:var(--gold)}
+.award .em{font-size:54px}.award h3{font-family:'Jua',sans-serif;font-size:27px;margin:6px 0}
+.award .pts{font-family:'Jua',sans-serif;font-size:34px;color:var(--gold);margin:6px 0}
+.award p{font-size:14.5px;color:var(--ink-soft);line-height:1.65;margin-bottom:18px}
+.lt{padding:18px 22px;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:space-between}
+.lt h3{font-family:'Jua',sans-serif;font-size:21px}.lt .x{font-size:22px;cursor:pointer}
+.list{padding:16px 18px}
+.lrow{display:flex;align-items:center;gap:14px;padding:13px 15px;margin-bottom:9px;background:#fff;border:2px solid var(--line-strong)}
+.lrow.me{border-color:var(--gold);background:#fffdf3}
+.lrow .rk{font-family:'Jua',sans-serif;font-size:21px;width:36px;text-align:center}
+.lrow .nm{flex:1;font-weight:800;font-size:16px}.lrow .nm small{display:block;font-weight:600;font-size:11.5px;color:var(--ink-soft);margin-top:2px}
+.lrow .sc{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:18px;color:var(--gold)}
+.empty2{padding:30px;text-align:center;color:var(--ink-soft);font-size:14px;line-height:1.7}
+.help-body{padding:22px 24px}
+.help-body h3{font-family:'Jua',sans-serif;font-size:22px;margin-bottom:4px}
+.help-body .ex{font-size:13px;color:var(--ink-soft);margin-bottom:15px;font-family:'JetBrains Mono',monospace}
+.vrow{display:grid;grid-template-columns:108px 1fr;gap:13px;padding:12px 0;border-bottom:2px dashed var(--line-strong);align-items:start}
+.vrow:last-child{border-bottom:none}
+.vrow .vt2{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#fff;padding:6px 8px;text-align:center}
+.vrow .vd{font-size:15px;line-height:1.55}.vrow .vd .e{display:block;font-size:13px;color:var(--ink-soft);margin-top:3px}
+
+@media (max-width:860px),(max-height:540px){
+  .inq{grid-template-columns:1fr;grid-template-rows:36% 64%}
+  .scene{border-right:none;border-bottom:3px solid var(--ink)}
+  .cmp{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001s!important;transition-duration:.001s!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="tb-l" onclick="toMap()"><div class="logo">🧭</div>
+      <div><h1>과학사 탐험대</h1><p>THINK LIKE A SCIENTIST</p></div></div>
+    <div class="tb-r">
+      <div class="chip">🏅 <span id="teamName">—</span></div>
+      <div class="chip">점수 <b id="scoreV">0</b></div>
+      <button class="tb-btn" onclick="openHelp()">변인이 뭐였지?</button>
+      <button class="tb-btn" onclick="openLead()">🏆 순위</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <section id="login" class="screen on">
+      <div class="login"><div class="box">
+        <div class="em">🧭</div>
+        <h2>과학사 탐험대</h2>
+        <p>위대한 과학 탐구를 다시 풀어보자.<br>이야기를 듣고, 가설을 세우고, 직접 실험해 보고서를 쓰고, «실제 과학자»와 비교하는 거야.</p>
+        <input id="nameIn" maxlength="20" placeholder="모둠 이름 (예: 3모둠)" onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="btn gold" style="width:100%;justify-content:center" onclick="doLogin()">탐험 시작 →</button>
+        <div class="net" id="netState">오프라인 모드 · 혼자/모둠 연습</div>
+      </div></div>
+    </section>
+
+    <section id="map" class="screen">
+      <div class="map" id="mapInner">
+        <div class="map-title"><h2>🗺️ 탐험 지도</h2><p>방향키(↑↓←→)로 캐릭터를 움직여 탐구 사건으로 가자 — 모둠마다 다른 탐구에 도전!</p></div>
+        <svg class="paths" id="paths" preserveAspectRatio="none"></svg>
+        <div class="basecamp" id="basecamp"><div class="b">⛺</div><div class="t">BASE CAMP</div></div>
+        <div class="hero-tok" id="hero"></div>
+        <div id="mapHint">⏎ Enter(또는 클릭)로 이 탐구 시작!</div>
+      </div>
+    </section>
+
+    <section id="inq" class="screen"><div class="inq" id="inqGrid"></div>
+      <div class="ov award" id="award"></div>
+    </section>
+  </div>
+
+  <div class="ov lead" id="lead"><div class="box">
+    <div class="lt"><h3>🏆 모둠 순위</h3><div class="x" onclick="closeOv('lead')">✕</div></div>
+    <div class="list" id="leadList"></div></div></div>
+
+  <div class="ov help" id="help"><div class="box"><div class="help-body">
+    <h3>🔬 변인 4가지</h3><div class="ex">예시 — «공부 시간과 시험 성적의 관계»</div>
+    <div class="vrow"><div class="vt2" style="background:var(--indep)">독립변인</div>
+      <div class="vd">실험 결과에 영향을 미치는 <b>모든 원인</b><span class="e">→ 시험 성적에 영향을 줄 수 있는 요인 전체</span></div></div>
+    <div class="vrow"><div class="vt2" style="background:var(--manip)">조작변인</div>
+      <div class="vd">가설 검증을 위해 실험자가 <b>일부러 변화시키는</b> 요인<span class="e">→ 매일 공부하는 시간(1·3·5시간으로 변경)</span></div></div>
+    <div class="vrow"><div class="vt2" style="background:var(--ctrl)">통제변인</div>
+      <div class="vd">결과를 정확하게 하려고 <b>일정하게 유지</b>하는 요인<span class="e">→ 공부 환경·수면 시간·문제집 난이도(모두 동일)</span></div></div>
+    <div class="vrow"><div class="vt2" style="background:var(--dep)">종속변인</div>
+      <div class="vd">독립변인의 변화에 따라 나타나는 <b>결과</b><span class="e">→ 최종 시험 성적</span></div></div>
+    <button class="btn ghost" style="margin:18px auto 0;display:flex" onclick="closeOv('help')">닫기</button>
+  </div></div></div>
+</div>
+
+<script>
+/* =====================================================================
+   설정
+===================================================================== */
+const SUPABASE_URL='', SUPABASE_ANON_KEY='';
+/* 직접 만든 마크 이미지를 쓰려면 URL을 넣으세요(GitHub raw). 비우면 SVG 복셀 사용. */
+const ASSETS={
+  bg:   'hyphotesis/map-bg.png',
+  hero: 'hyphotesis/hero.png',
+  labs:{ phys:'hyphotesis/lab-phys.png', chem:'hyphotesis/lab-chem.png', bio:'hyphotesis/lab-bio.png' },
+  comics:{ phys:'hyphotesis/comic-phys.png', chem:'hyphotesis/comic-chem.png', bio:'hyphotesis/comic-bio.png' }
+};
+
+/* =====================================================================
+   복셀(마인크래프트풍) SVG
+===================================================================== */
+function heroVoxel(){ return `<svg viewBox="0 0 46 60" shape-rendering="crispEdges">
+  <rect x="13" y="2" width="20" height="6" fill="#5a3b22"/>
+  <rect x="13" y="8" width="20" height="14" fill="#d8a07a"/>
+  <rect x="17" y="13" width="4" height="4" fill="#241f33"/><rect x="25" y="13" width="4" height="4" fill="#241f33"/>
+  <rect x="11" y="22" width="24" height="22" fill="#2f9e9e"/>
+  <rect x="7" y="22" width="4" height="16" fill="#d8a07a"/><rect x="35" y="22" width="4" height="16" fill="#d8a07a"/>
+  <rect x="13" y="44" width="9" height="14" fill="#3b4a6b"/><rect x="24" y="44" width="9" height="14" fill="#3b4a6b"/>
+</svg>`; }
+function heroSVG(){ return ASSETS.hero
+  ? `<img src="${ASSETS.hero}" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated" onerror="this.outerHTML=heroVoxel()">`
+  : heroVoxel(); }
+
+/* =====================================================================
+   데이터 — 4과목 과학사 탐구
+===================================================================== */
+const INQ=[
+ { id:'phys', subject:'물리', sci:'갈릴레오 갈릴레이', yr:'1589', place:'이탈리아 피사', ac:'var(--phys)', icon:'🪶', x:22, y:38,
+   title:'무거운 것이 정말 빨리 떨어질까?',
+   story:['1589년, 이탈리아 피사. 스물다섯 살의 젊은 교수 갈릴레오는 모두가 믿는 한 가지가 영 미심쩍었어.',
+     '«무거운 물체가 가벼운 물체보다 빨리 떨어진다.» 천 년이 넘도록 아무도 의심하지 않은 아리스토텔레스의 말이었지.',
+     '갈릴레오는 생각했어. «정말 그럴까? 직접 확인해 보면 되잖아.»',
+     '전설에 따르면 그는 피사의 사탑 꼭대기로 무거운 쇠공과 가벼운 쇠공을 들고 올라갔어. 광장에 사람들이 모여 고개를 들었지. 두 공이 그의 손을 «동시에» 떠난 순간 —'],
+   storyQuiz:{ q:'갈릴레오가 의심한 «모두가 믿던 생각»은?', opts:[
+     {t:'무거운 것이 가벼운 것보다 빨리 떨어진다',ok:true},{t:'공은 둥글다',ok:false},{t:'탑은 기울어져 있다',ok:false}],
+     hint:'천 년 넘게 이어진 아리스토텔레스의 주장이었어.' },
+   hypo:{ q:'네 가설은? 두 공을 동시에 떨어뜨리면…', opts:[
+     {t:'무거운 공이 먼저 닿는다',me:'무거운 공이 먼저'},{t:'거의 동시에 닿는다',me:'거의 동시에'},{t:'가벼운 공이 먼저 닿는다',me:'가벼운 공이 먼저'}], sci:1,
+     hint:'무게가 2배라고 2배 빨리 떨어질까? 깃털이 천천히 떨어지는 건 «무게» 때문일까, «공기» 때문일까?' },
+   manip:{ q:'이 실험에서 «일부러 다르게» 할 조작변인은?', opts:[{t:'공의 무게',ok:true},{t:'떨어뜨리는 높이',ok:false},{t:'공의 색깔',ok:false}], ans:'공의 무게',
+     hint:'알아보려는 «원인»이 조작변인. 우리는 «무게»가 낙하에 영향을 주는지 보고 싶어.' },
+   ctrl:{ q:'결과가 공정하려면 «똑같이» 유지할 통제변인은? (맞는 것 모두)', opts:[
+     {t:'떨어뜨리는 높이',ok:true},{t:'공의 모양·크기(공기저항)',ok:true},{t:'동시에 놓는 순간',ok:true},{t:'공의 무게',ok:false}],
+     hint:'무게 «말고» 결과를 바꿀 수 있는 건 다 고정해야 해. 공기저항도 그중 하나!' },
+   sim:{ note:'공기저항을 «있음/없음»으로 바꾸고, 무게 슬라이더를 움직여 낙하 시간을 재 보자.', need:3,
+     controls:[
+       {key:'w',kind:'slider',label:'공의 무게',role:'조작',roleC:'var(--manip)',min:1,max:10,step:1,unit:'kg',val:5},
+       {key:'air',kind:'seg',label:'공기저항(모양 통제)',role:'통제',roleC:'var(--ctrl)',options:['있음(공기)','없음(진공)'],val:1}],
+     cols:[['공 무게','w','kg'],['공기저항','airL',''],['낙하 시간','read','초']] },
+   dep:'땅에 닿는 시간',
+   cmp:{ sciHypo:'무게와 낙하 속도는 관계없다', sciCtrl:'공의 모양·크기를 같게 해 «공기저항»을 통제하고 무게만 다르게 함',
+     sciResult:'무게와 상관없이 거의 동시에 떨어진다',
+     insight:'갈릴레오의 핵심은 «공기저항»이라는 방해 요인을 통제한 것. 무게만 다르게 두니 비로소 진짜가 보였어 — 이게 변인통제의 힘이야.' },
+   finalQuiz:{ q:'갈릴레오가 공의 «모양·크기»를 같게 만든 이유는?', opts:[
+     {t:'무게 말고 다른 원인(공기저항)이 끼어들지 못하게 통제하려고',ok:true},
+     {t:'공이 예뻐 보이려고',ok:false},{t:'더 빨리 떨어뜨리려고',ok:false}],
+     hint:'조작변인(무게) «말고» 결과를 바꿀 수 있는 걸 고정하는 게 통제변인이야.' },
+   deepSci:`<p>갈릴레오는 공식을 몰랐지만, 약 100년 뒤 <b>뉴턴</b>이 이 현상을 식으로 깔끔하게 설명했어. 같이 따라가 보자.</p>
+     <div class="formula">
+       <div class="frow"><span class="fl">① 물체에 작용하는 중력</span><span class="fe">F<sub>중력</sub> = m · g</span></div>
+       <div class="fnote">m = 질량, g = 중력가속도(≈ 9.8 m/s²)</div>
+       <div class="frow"><span class="fl">② 뉴턴 제2법칙</span><span class="fe">F = m · a</span></div>
+       <div class="fnote">a = 가속도(떨어지며 빨라지는 정도)</div>
+       <div class="frow"><span class="fl">③ 떨어지는 물체에 작용하는 힘은 중력뿐</span><span class="fe">m · a = m · g</span></div>
+       <div class="frow hi"><span class="fl">④ 양변의 m을 약분하면</span><span class="fe">a = g</span></div>
+     </div>
+     <p><b>가속도 a가 질량 m과 완전히 무관해!</b> 무거운 공은 중력(m·g)이 더 크지만, 그만큼 «움직이기 어려운 정도(관성 = 질량 m)»도 똑같이 커져서 정확히 상쇄돼. 그래서 모든 물체가 같은 가속도 g로 떨어지는 거야.</p>
+     <p>단, 공기 중에서는 여기에 <b>공기저항 F<sub>저항</sub></b>이 더해져서 가볍거나 넓은 물체가 느려져. 진공에서는 깃털과 쇠공도 «동시에» 떨어지지 — 실제로 1971년 아폴로 15호 우주비행사가 달(진공)에서 망치와 깃털을 떨어뜨려 동시에 착지하는 걸 증명했어.</p>` },
+
+
+ { id:'chem', subject:'화학', sci:'라부아지에', yr:'1772', place:'프랑스 파리', ac:'var(--chem)', icon:'🔥', x:50, y:66,
+   title:'물질이 타면 무게가 줄어들까?',
+   story:['1772년, 프랑스 파리. 라부아지에는 정밀한 저울 앞에서 고민에 빠졌어.',
+     '나무가 타면 재만 남아 가벼워 보여. 그런데 쇠는 녹슬면 오히려 무거워지지. «무게는 대체 어디서 생기고 어디로 사라지는 걸까?»',
+     '사람들은 «플로지스톤»이라는 신비한 물질이 빠져나간다고 믿었어. 하지만 라부아지에는 믿지 않았지.',
+     '그는 금속 조각을 유리 용기에 넣고 입구를 «단단히 밀봉»한 뒤, 햇빛을 모아 가열하기 시작했어. 그리고 타기 전과 후, 용기 «전체»의 무게를 쟀지 —'],
+   storyQuiz:{ q:'라부아지에가 금속을 가열할 때 한 «특별한 준비»는?', opts:[
+     {t:'유리 용기를 단단히 밀봉(밀폐)했다',ok:true},{t:'용기를 활짝 열어 두었다',ok:false},{t:'금속을 잘게 부쉈다',ok:false}],
+     hint:'공기가 드나들면 «전체» 무게를 정확히 잴 수 없겠지?' },
+   hypo:{ q:'네 가설은? 밀폐 용기 안에서 태우면 «전체» 무게는…', opts:[
+     {t:'줄어든다',me:'줄어든다'},{t:'그대로다',me:'그대로다'},{t:'늘어난다',me:'늘어난다'}], sci:1,
+     hint:'밖에서 아무것도 들어오거나 나가지 못한다면, 안에 있던 «전체»의 양은 어떻게 될까?' },
+   manip:{ q:'여기서 조작변인(일부러 바꾸는 것)은?', opts:[{t:'가열 전 ↔ 가열 후',ok:true},{t:'저울의 종류',ok:false},{t:'실험실 온도',ok:false}], ans:'가열 전 ↔ 가열 후',
+     hint:'«타기 전»과 «탄 후»를 비교하는 게 이 실험의 목적이야.' },
+   ctrl:{ q:'정확한 측정을 위해 통제할 변인은? (맞는 것 모두)', opts:[
+     {t:'용기를 «밀폐»해 공기 출입 차단',ok:true},{t:'같은 정밀 저울로 측정',ok:true},{t:'같은 금속·같은 양',ok:true},{t:'가열 전후를 다르게',ok:false}],
+     hint:'«가열 전후»만 빼고 나머지는 다 똑같아야 공정해. 특히 공기가 드나들면 안 돼!' },
+   sim:{ note:'용기를 «밀폐/개방»으로 바꾸고 금속 양을 조절해, 가열 전후 «전체» 질량을 비교해 기록하자.', need:3,
+     controls:[
+       {key:'seal',kind:'seg',label:'용기 상태(통제)',role:'통제',roleC:'var(--ctrl)',options:['밀폐','개방'],val:0},
+       {key:'m',kind:'slider',label:'금속의 양(조작 조건)',role:'조작',roleC:'var(--manip)',min:10,max:50,step:10,unit:'g',val:30}],
+     cols:[['용기','sealL',''],['가열 전','before','g'],['가열 후','read','g']] },
+   dep:'용기 «전체»의 질량',
+   cmp:{ sciHypo:'타도 전체 질량은 보존된다', sciCtrl:'«밀폐» 용기로 공기 출입을 막고 정밀 저울로 전체 질량을 잼',
+     sciResult:'가열 전후 전체 질량은 똑같다(질량 보존)',
+     insight:'금속만 보면 무거워지지만, «밀폐»로 공기를 가두고 «전체»를 재니 질량은 그대로. 무거워진 건 공기 속 산소와 결합했기 때문이야. 밀폐가 변인통제의 핵심이었어.' },
+   finalQuiz:{ q:'왜 «밀폐»가 그렇게 중요했을까?', opts:[
+     {t:'공기(산소)의 출입을 막아 «전체» 질량을 정확히 재려고',ok:true},
+     {t:'불이 꺼지지 않게 하려고',ok:false},{t:'냄새가 나지 않게 하려고',ok:false}],
+     hint:'개방 상태로 재면 공기 속 산소가 들어와 무거워 보여 — 그래서 통제가 필요했어.' },
+   deepSci:`<p>라부아지에가 증명한 건 화학에서 가장 중요한 법칙 중 하나 — <b>질량 보존의 법칙</b>이야.</p>
+     <p>화학 반응은 원자가 새로 생기거나 사라지는 게 아니라, <b>짝만 바꾸는</b> 일이야. 금속이 «타는» 것은 사실 공기 중 <b>산소(O₂)와 결합</b>하는 «산화» 반응이지.</p>
+     <div class="formula">
+       <div class="frow"><span class="fl">금속이 타는 반응(예: 수은)</span></div>
+       <div class="frow hi"><span class="fe">2Hg + O<sub>2</sub> → 2HgO</span></div>
+       <div class="fnote">금속 + 산소 → 금속 산화물</div>
+     </div>
+     <p>그래서 <b>금속만</b> 보면 산소가 붙어 무거워져. 하지만 그 산소는 «용기 안의 공기»에서 온 것! 밀폐 용기 <b>전체(금속 + 공기)</b>를 재면, 반응 전후 원자의 총개수가 같으므로 질량은 변하지 않아.</p>
+     <div class="formula">
+       <div class="frow hi"><span class="fl">반응 전 전체 질량</span><span class="fe">=  반응 후 전체 질량</span></div>
+     </div>
+     <p>반대로 나무가 타서 «가벼워» 보이는 건, 연기와 기체(이산화탄소·수증기)가 공중으로 <b>빠져나갔기</b> 때문이야. 그 기체까지 전부 모아서 재면 역시 질량은 그대로 보존돼. 라부아지에는 이 정밀 측정으로 «플로지스톤»이라는 가짜 가설을 무너뜨리고 <b>근대 화학</b>의 문을 열었어.</p>` },
+
+
+ { id:'bio', subject:'생물', sci:'프란체스코 레디', yr:'1668', place:'이탈리아 피렌체', ac:'var(--bio)', icon:'🪰', x:78, y:38,
+   title:'구더기는 «저절로» 생길까?',
+   story:['1668년, 이탈리아 피렌체. 의사 레디는 푸줏간을 지나다 역겨운 광경을 봤어. 썩은 고기에 구더기가 우글거리고 있었지.',
+     '사람들은 당연하다는 듯 말했어. «썩은 고기에서는 구더기가 저절로 생기는 거야.» 수천 년 동안 이어진 «자연발생설»이었지.',
+     '그런데 레디는 고개를 갸웃했어. «정말 저절로? 혹시 저 위를 윙윙 나는 파리들과 관계가 있는 건 아닐까?»',
+     '그는 똑같은 고기를 담은 병 여러 개를 준비했어. 그리고 «뚜껑»만 서로 다르게 했지 —'],
+   storyQuiz:{ q:'레디가 여러 병에서 «서로 다르게» 한 한 가지는?', opts:[
+     {t:'병뚜껑(파리가 들어갈 수 있는지)',ok:true},{t:'고기의 종류',ok:false},{t:'병의 색깔',ok:false}],
+     hint:'나머지는 모두 같게 두고, «딱 하나»만 다르게 해야 진짜 원인을 알 수 있어.' },
+   hypo:{ q:'네 가설은? 구더기는…', opts:[
+     {t:'고기에서 저절로 생긴다',me:'저절로 생긴다'},{t:'파리가 낳은 알에서 생긴다',me:'파리 알에서'}], sci:1,
+     hint:'구더기가 자란 고기 «위»에는 늘 무엇이 윙윙 날아다녔을까?' },
+   manip:{ q:'조작변인(일부러 다르게 하는 것)은?', opts:[
+     {t:'병뚜껑 상태(열림 / 거즈 / 밀폐)',ok:true},{t:'고기의 종류',ok:false},{t:'관찰하는 날씨',ok:false}], ans:'병뚜껑 상태',
+     hint:'«파리가 고기에 닿을 수 있는지»를 다르게 하려면 무엇을 바꿔야 할까?' },
+   ctrl:{ q:'통제변인(똑같이 유지)은? (맞는 것 모두)', opts:[
+     {t:'고기의 종류·양',ok:true},{t:'온도·장소',ok:true},{t:'관찰 기간',ok:true},{t:'뚜껑 상태',ok:false}],
+     hint:'«뚜껑»만 빼고 전부 같아야, 차이가 «파리 접근» 때문임을 확신할 수 있어.' },
+   sim:{ note:'병뚜껑을 바꾸고 날짜를 넘겨, 구더기가 생기는지 관찰해 기록하자.', need:3,
+     controls:[
+       {key:'cap',kind:'seg',label:'병뚜껑(조작)',role:'조작',roleC:'var(--manip)',options:['열림','거즈','밀폐'],val:0},
+       {key:'day',kind:'slider',label:'관찰 일수(통제: 동일하게)',role:'통제',roleC:'var(--ctrl)',min:0,max:7,step:1,unit:'일',val:5}],
+     cols:[['뚜껑','capL',''],['관찰','day','일'],['구더기','read','']] },
+   dep:'구더기가 생기는지 여부',
+   cmp:{ sciHypo:'구더기는 파리가 낳은 알에서 생긴다', sciCtrl:'고기·온도·장소는 같게 하고 «뚜껑(파리 접근)»만 다르게 한 대조 실험',
+     sciResult:'열린 병에만 구더기가 생기고, 막은 병엔 생기지 않음',
+     insight:'레디의 비결은 «대조군». 거즈로 막은 병은 공기는 통하되 파리만 못 들어오게 했지. «파리 접근»이라는 한 변인만 다르게 하니 진짜 원인이 또렷이 드러났어.' },
+   finalQuiz:{ q:'«거즈로 막은 병»이 한 역할은?', opts:[
+     {t:'공기는 통하되 파리만 막아 «파리 접근»만 다르게 한 대조군',ok:true},
+     {t:'고기를 신선하게 보관하려고',ok:false},{t:'냄새를 막으려고',ok:false}],
+     hint:'«공기 때문 아니냐»는 반박을 막으려면, 공기는 통하게 두는 게 영리하지.' },
+   deepSci:`<p>레디의 실험은 «생명은 저절로 생긴다»는 <b>자연발생설(생물속생설의 반대)</b>을 무너뜨린 결정적 한 방이었어.</p>
+     <p>핵심은 <b>대조 실험(controlled experiment)</b>이야 — 나머지 조건을 모두 똑같이 두고 «뚜껑(파리 접근)»이라는 한 변인만 다르게 했지. 그래서 결과의 차이가 오직 그 변인 «때문»임을 확신할 수 있었어. 거즈로 막은 병은 «공기 때문 아니냐»는 반박까지 막은 영리한 한 수였고.</p>
+     <p>하지만 더 작은 «미생물»에 대해서는 논쟁이 200년 더 이어졌어. 결국 1860년대 <b>파스퇴르</b>가 «백조목 플라스크» 실험으로 — 공기는 통하되 먼지·미생물은 막아 — 미생물조차 저절로 생기지 않음을 증명하며 마침표를 찍었지. 모두 같은 «변인통제»의 논리야.</p>` },
+
+];
+const BYID={}; INQ.forEach(q=>BYID[q.id]=q);
+
+/* =====================================================================
+   상태 + DB
+===================================================================== */
+const state={ team:'', score:0, cleared:{} };
+let sb=null, online=false;
+function loadScript(src){ return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);}); }
+async function initDB(){ if(!SUPABASE_URL||!SUPABASE_ANON_KEY) return;
+  try{ await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY); online=true;
+    document.getElementById('netState').textContent='온라인 · 모둠 경쟁 켜짐 🟢';
+  }catch(e){ console.warn(e); } }
+initDB();
+const $=s=>document.querySelector(s);
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on')); $('#'+id).classList.add('on'); }
+if(ASSETS.bg){ document.getElementById('mapInner').style.cssText+=`background:url(${ASSETS.bg}) center/cover,linear-gradient(180deg,#8fc1e8 0,#a9d3ea 38%,#bfe0c8 38%,#bfe0c8 100%)`; }
+
+/* ===== (TTS 제거됨) ===== */
+function stopSpeak(){}
+
+/* ===== 로그인 ===== */
+async function doLogin(){
+  const n=$('#nameIn').value.trim(); if(!n) return $('#nameIn').focus();
+  state.team=n; $('#teamName').textContent=n;
+  if(online){ try{
+    const {data:g}=await sb.from('sci_groups').upsert({name:n},{onConflict:'name'}).select().single(); state.gid=g.id;
+    const {data:cl}=await sb.from('sci_clears').select('inquiry,score').eq('group_id',g.id);
+    (cl||[]).forEach(r=>state.cleared[r.inquiry]=r.score);
+    state.score=Object.values(state.cleared).reduce((a,b)=>a+b,0);
+  }catch(e){ console.warn(e); } }
+  $('#scoreV').textContent=state.score; buildMap(); toMap();
+}
+
+/* ===== 지도 ===== */
+function buildMap(){
+  const m=$('#mapInner'); m.querySelectorAll('.node').forEach(n=>n.remove());
+  INQ.forEach(q=>{ const d=document.createElement('div');
+    d.className='node'+(state.cleared[q.id]!=null?' cleared':''); d.style.cssText=`left:${q.x}%;top:${q.y}%;--ac:${q.ac}`;
+    d.innerHTML=`<div class="disc"><span class="yr">${q.yr}</span>${q.icon}<div class="done">✓</div></div>
+      <div class="nm">${q.subject} · ${q.sci}</div><div class="sub">${q.title}</div>`;
+    d.onclick=()=>enterInquiry(q.id); m.appendChild(d); });
+  $('#basecamp').style.cssText='left:50%;top:88%';
+  $('#hero').innerHTML=heroSVG();
+  const svg=$('#paths'); const W=m.clientWidth||1200,H=m.clientHeight||600; svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML=INQ.map(q=>`<line x1="${.5*W}" y1="${.88*H}" x2="${q.x/100*W}" y2="${q.y/100*H}" stroke="rgba(36,31,51,.22)" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round"/>`).join('');
+  moveHero(50,88);
+}
+function moveHero(x,y){ state.heroX=x; state.heroY=y; const h=$('#hero'); if(h){ h.style.left=x+'%'; h.style.top=y+'%'; } checkNear(); }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function checkNear(){
+  let near=null, idx=-1;
+  INQ.forEach((q,i)=>{ if(near) return; if(Math.hypot(q.x-state.heroX,q.y-state.heroY)<9){ near=q.id; idx=i; } });
+  state.nearNode=near;
+  const nodes=document.querySelectorAll('.node'); nodes.forEach(n=>n.classList.remove('near'));
+  if(idx>=0&&nodes[idx]) nodes[idx].classList.add('near');
+  const hint=$('#mapHint'); if(hint) hint.classList.toggle('on',!!near);
+}
+function toMap(){ if(!state.team) return; stopSpeak(); show('map'); requestAnimationFrame(buildMap); $('#scoreV').textContent=state.score; }
+
+/* ===== 탐구 진행 ===== */
+let cur=null, beat=0, picks={};
+const BEATS=['사건','나의 가설','나의 변인 설계','실험 시뮬레이션','과학자는?','정리'];
+function enterInquiry(id){ const q=BYID[id]; moveHero(q.x,q.y);
+  setTimeout(()=>{ cur=q; beat=0;
+    picks={hypo:null,manipDone:false,ctrl:new Set(),ctrlDone:false,ctrlScore:0,
+      storyHeard:false,storyQuizOk:false,report:[],simVals:{},finalOk:false};
+    q.sim.controls.forEach(c=>picks.simVals[c.key]=c.val);
+    show("inq"); renderInq(); }, 350);
+}
+function renderInq(){
+  const q=cur; stopSpeak();
+  const dots=BEATS.map((b,i)=>`<div class="pd ${i<=beat?'on':''}"></div>`).join('');
+  const labImg=ASSETS.labs[q.id];
+  const scene=`<div class="scene" style="--ac:${q.ac}">
+    <div class="sc-top"><div class="ic">${q.icon}</div><div>
+      <div class="yr">${q.yr} · ${q.place}</div><h3>${q.title}</h3><div class="pl">${q.subject} · ${q.sci}</div></div></div>
+    <div class="canvas ${labImg?'has-img':''}" id="canvas" ${labImg?`style="background-image:url(${labImg}),linear-gradient(180deg,#cfe6f2,#dfeec9 60%,var(--grass) 60%)"`:''}>${scenePreview(q)}</div></div>`;
+  const panel=`<div class="panel" style="--ac:${q.ac}">
+    <div class="p-prog"><div class="dots">${dots}</div><div class="lab">${beat+1}/6 · ${BEATS[beat]}</div></div>
+    <div class="p-body" id="pbody">${beatBody(q)}</div>
+    <div class="p-foot">
+      <button class="btn ghost sm" onclick="toMap()">← 지도</button>
+      <button class="btn gold sm" id="nextBtn" onclick="nextBeat()" ${nextDisabled()?'disabled':''}>${beat===5?'완료 🏅':'다음 →'}</button>
+    </div></div>`;
+  $('#inqGrid').innerHTML=scene+panel;
+  if(beat===3) initSim(q);
+}
+function nextDisabled(){
+  if(beat===0) return !picks.storyQuizOk;
+  if(beat===1) return picks.hypo==null;
+  if(beat===2) return !picks.ctrlDone;
+  if(beat===3) return picks.report.length < cur.sim.need;
+  if(beat===5) return !picks.finalOk;
+  return false;
+}
+function refreshNext(){ const b=$('#nextBtn'); if(b) b.disabled=nextDisabled(); }
+function nextBeat(){ if(nextDisabled()) return; if(beat<5){ beat++; renderInq(); } else finishInquiry(); }
+
+/* ===== 비트 본문 ===== */
+function beatBody(q){
+  if(beat===0) return storyBody(q);
+  if(beat===1) return `<div class="beat-eye">나의 가설 · PREDICT</div><div class="beat-h">${q.hypo.q}</div>
+    <p class="beat-p">정답을 맞히는 게 아니야. <b>네 생각을 먼저 정하는 것</b>이 과학의 첫걸음이지.</p>
+    ${hintBtn(q.hypo.hint)}${q.hypo.opts.map((o,i)=>optHTML(i,o.t,'hypo')).join('')}`;
+  if(beat===2) return `<div class="beat-eye">나의 변인 설계 · DESIGN</div><div class="beat-h">공정한 실험을 설계하자</div>
+    <div class="varhint">결과로 잴 <span class="vtag" style="background:var(--dep)">종속변인</span>은 «${q.dep}». 이제 <span class="vtag" style="background:var(--manip)">조작변인</span>(일부러 바꿈)과 <span class="vtag" style="background:var(--ctrl)">통제변인</span>(똑같이 유지)을 골라봐.</div>
+    <div id="designArea">${designManip(q)}</div>`;
+  if(beat===3) return `<div class="beat-eye">실험 시뮬레이션 · DO IT</div><div class="beat-h">직접 실험하고 기록하자</div>
+    <p class="beat-p">${q.sim.note}</p>
+    <div class="simwrap" id="ctlWrap"></div>
+    <div class="reading"><span class="k">${q.sim.cols[q.sim.cols.length-1][0]}</span><span class="v" id="reading">—</span></div>
+    <button class="btn sm" id="recBtn" onclick="recordRow()">📋 보고서에 기록</button>
+    <div id="reportWrap" style="margin-top:12px"></div>`;
+  if(beat===4) return compareBody(q);
+  if(beat===5) return `<div class="beat-eye">정리 · INSIGHT</div><div class="beat-h">오늘 배운 탐구의 비밀</div>
+    <div class="insight"><div class="h">💡 변인통제의 힘</div>${q.cmp.insight}</div>
+    <div class="beat-eye" style="margin-top:6px">마지막 퀴즈 · 통과해야 완료!</div>
+    <div class="beat-h" style="font-size:21px">${q.finalQuiz.q}</div>
+    ${hintBtn(q.finalQuiz.hint)}${q.finalQuiz.opts.map((o,i)=>quizOpt(i,o.t,'final')).join('')}
+    <div class="fb" id="finalFb"></div>
+    ${q.deepSci?`<div class="sci-explain"><div class="se-h">🔬 더 깊이 — 과학 원리</div>${q.deepSci}</div>`:''}`;
+  return '';
+}
+
+/* ---------- 힌트 ---------- */
+function hintBtn(text){ if(!text) return ''; return `<button class="hint-btn" onclick="this.nextElementSibling.classList.toggle('show')">💡 힌트 보기</button><div class="hint-box">${text}</div>`; }
+
+/* ---------- 스토리 + TTS ---------- */
+function storyBody(q){
+  const para=q.story.map(p=>`<p>${p}</p>`).join('');
+  const comic=ASSETS.comics&&ASSETS.comics[q.id];
+  const comicHTML = comic
+    ? `<img class="comic" src="${comic}" alt="${q.subject} 사건 만화" onerror="this.outerHTML=comicSlot('${q.id}')">`
+    : comicSlot(q.id);
+  const sq=q.storyQuiz;
+  return `<div class="beat-eye">사건 · STORY</div><div class="beat-h">${q.title}</div>
+    ${comicHTML}
+    <div class="story">${para}</div>
+    <div class="fb info show">📖 이야기를 읽고, 아래 내용을 확인하면 다음으로 갈 수 있어.</div>
+    <div class="beat-h" style="font-size:20px">${sq.q}</div>${hintBtn(sq.hint)}
+    ${sq.opts.map((o,i)=>quizOpt(i,o.t,'story')).join('')}<div class="fb" id="storyFb"></div>`;
+}
+function comicSlot(id){ return `<div class="comic-slot">🎨 여기에 «사건 만화»가 들어갑니다<br><span>hyphotesis/comic-${id}.png</span></div>`; }
+
+/* ---------- 가설 옵션 ---------- */
+function optHTML(i,t,kind){ const sel=picks[kind]===i; return `<button class="opt ${sel?'sel':''}" onclick="pickHypo(${i})"><span class="mk">${'ABCDE'[i]}</span><span>${t}</span></button>`; }
+function pickHypo(i){ picks.hypo=i; document.querySelectorAll('#pbody .opt').forEach((e,j)=>e.classList.toggle('sel',j===i)); refreshNext(); }
+
+/* ---------- 퀴즈 옵션 (정답 게이트) ---------- */
+function quizOpt(i,t,kind){ return `<button class="opt" id="${kind}o${i}" onclick="pickQuiz('${kind}',${i})"><span class="mk">${'ABC'[i]}</span><span>${t}</span><span class="why"></span></button>`; }
+function pickQuiz(kind,i){
+  const q = kind==='story'?cur.storyQuiz : cur.finalQuiz;
+  const doneFlag = kind==='story'?'storyQuizOk':'finalOk';
+  if(picks[doneFlag]) return;
+  const ok=q.opts[i].ok; const el=$('#'+kind+'o'+i); const fb=$('#'+(kind==='story'?'storyFb':'finalFb'));
+  if(ok){ picks[doneFlag]=true; el.classList.add('ok');
+    document.querySelectorAll('#pbody .opt').forEach((e)=>{ if(e!==el)e.classList.add('dim'); e.style.pointerEvents='none'; });
+    if(fb){ fb.className='fb good show'; fb.textContent='✅ 정답! 잘 이해했어.'; }
+    refreshNext();
+  } else { el.classList.add('bad'); setTimeout(()=>el.classList.remove('bad'),900);
+    if(fb){ fb.className='fb warn show'; fb.textContent='🤔 다시 생각해봐. 힌트를 눌러도 좋아.'; } }
+}
+
+/* ---------- 변인 설계 ---------- */
+function designManip(q){
+  return `<div style="font-weight:800;color:var(--manip);font-size:14px;margin-bottom:8px;font-family:'JetBrains Mono',monospace">STEP A · 조작변인 고르기</div>
+    <p class="beat-p" style="margin-bottom:9px">${q.manip.q}</p>${hintBtn(q.manip.hint)}
+    ${q.manip.opts.map((op,i)=>`<button class="opt" id="m${i}" onclick="pickManip(${i})"><span class="mk">${'ABC'[i]}</span><span>${op.t}</span><span class="why"></span></button>`).join('')}
+    <div id="ctrlWrap"></div>`;
+}
+function pickManip(i){ const q=cur; if(picks.manipDone) return;
+  const ok=q.manip.opts[i].ok, el=$('#m'+i); el.classList.add('reveal');
+  el.querySelector('.why').textContent= ok?'맞아! 이걸 일부러 다르게 해서 영향을 봐.':'이건 조작변인이 아니야. 힌트를 보고 다시 골라봐.';
+  if(ok){ picks.manipDone=true; el.classList.add('ok');
+    document.querySelectorAll('#designArea > .opt, #designArea #m0, #designArea #m1, #designArea #m2').forEach(()=>{});
+    [0,1,2].forEach(j=>{ const e=$('#m'+j); if(e){ if(j!==i)e.classList.add('dim'); e.style.pointerEvents='none'; } });
+    $('#ctrlWrap').innerHTML=designCtrl(q);
+  } else { el.classList.add('bad'); setTimeout(()=>{ el.classList.remove('bad','reveal'); el.querySelector('.why').textContent=''; },1300); }
+}
+function designCtrl(q){
+  return `<div style="font-weight:800;color:var(--ctrl);font-size:14px;margin:18px 0 8px;font-family:'JetBrains Mono',monospace">STEP B · 통제변인 고르기 (여러 개)</div>
+    <p class="beat-p" style="margin-bottom:9px">${q.ctrl.q}</p>${hintBtn(q.ctrl.hint)}
+    ${q.ctrl.opts.map((op,i)=>`<button class="opt" id="c${i}" onclick="toggleCtrl(${i})"><span class="mk"></span><span>${op.t}</span></button>`).join('')}
+    <button class="btn sm" style="margin-top:4px" id="ctrlCheck" onclick="checkCtrl()">통제변인 확정</button>
+    <div class="fb" id="ctrlFb"></div>`;
+}
+function toggleCtrl(i){ if(picks.ctrlDone) return; const el=$('#c'+i);
+  if(picks.ctrl.has(i)){ picks.ctrl.delete(i); el.classList.remove('sel'); el.querySelector('.mk').textContent=''; }
+  else { picks.ctrl.add(i); el.classList.add('sel'); el.querySelector('.mk').textContent='✓'; } }
+function checkCtrl(){ const q=cur; picks.ctrlDone=true; let good=0,bad=0;
+  q.ctrl.opts.forEach((op,i)=>{ const el=$('#c'+i); el.style.pointerEvents='none'; const chosen=picks.ctrl.has(i);
+    if(op.ok){ el.classList.add('ok'); el.querySelector('.mk').textContent='✓'; if(chosen)good++; }
+    else if(chosen){ el.classList.add('bad'); el.querySelector('.mk').textContent='✕'; bad++; } else el.classList.add('dim'); });
+  picks.ctrlScore=Math.max(0,good-bad); const total=q.ctrl.opts.filter(o=>o.ok).length;
+  const fb=$('#ctrlFb'); fb.className='fb good show';
+  fb.innerHTML=`✓ 통제변인 ${good}/${total} 정확${bad?` · 잘못 고름 ${bad}`:''}. <b>나머지를 똑같이 유지</b>해야 조작변인의 효과를 정확히 볼 수 있어.`;
+  $('#ctrlCheck').style.display='none'; refreshNext();
+}
+
+/* ===================================================================
+   실험 시뮬레이션 (슬라이더 + 보고서)
+=================================================================== */
+function ctlLabel(c,v){
+  if(c.kind==='seg') return c.options[v];
+  return v+(c.unit||'');
+}
+function initSim(q){
+  const wrap=$('#ctlWrap');
+  wrap.innerHTML=q.sim.controls.map(c=>{
+    const v=picks.simVals[c.key];
+    if(c.kind==='seg'){
+      const segs=c.options.map((o,i)=>`<button class="${i==v?'on':''}" style="--ac:${q.ac}" onclick="setSeg('${c.key}',${i})">${o}</button>`).join('');
+      return `<div class="ctl"><div class="top"><div class="nm">${c.label} <span class="role" style="background:${c.roleC}">${c.role}</span></div></div><div class="seg">${segs}</div></div>`;
+    }
+    return `<div class="ctl"><div class="top"><div class="nm">${c.label} <span class="role" style="background:${c.roleC}">${c.role}</span></div><div class="val" id="v_${c.key}">${ctlLabel(c,v)}</div></div>
+      <input type="range" style="--ac:${q.ac}" min="${c.min}" max="${c.max}" step="${c.step}" value="${v}" oninput="setSlider('${c.key}',this.value)"></div>`;
+  }).join('');
+  updateSim(); renderReport();
+}
+function setSeg(key,i){ picks.simVals[key]=i; initSim(cur); }
+function setSlider(key,val){ const c=cur.sim.controls.find(x=>x.key===key); const v=parseFloat(val);
+  picks.simVals[key]=v; const lab=$('#v_'+key); if(lab)lab.textContent=ctlLabel(c,v); updateSim(); }
+
+
+/* ===================================================================
+   계산
+=================================================================== */
+function simRead(q,v){
+  if(q.id==='phys'){ const air=v.air;            // 0 공기, 1 진공
+    // 진공: 무게 무관 동일 / 공기: 가벼울수록(=작을수록) 약간 느림
+    const t = air===1 ? 1.40 : (1.40 + (10 - v.w)*0.05);
+    return {value:t.toFixed(2), unit:'초', extra:{airL: air===1?'없음(진공)':'있음(공기)'}}; }
+  if(q.id==='chem'){ const before=v.m+50; const after = v.seal===0 ? before : before + Math.round(v.m*0.15);
+    return {value:after, unit:'g', extra:{sealL: v.seal===0?'밀폐':'개방', before:before}}; }
+  if(q.id==='bio'){ const grown = v.cap===0 ? (v.day>=2 ? Math.min(20,(v.day-1)*4) : 0) : 0;
+    return {value: grown>0?grown+'마리':'없음', unit:'', extra:{capL:['열림','거즈','밀폐'][v.cap]}}; }
+  return {value:'—',unit:''};
+}
+
+/* ===================================================================
+   시뮬 렌더 — 장면은 «한 번만» 그리고(buildScene),
+   슬라이더 변화는 SVG 요소 속성만 갱신(syncScene). 애니메이션은 rAF.
+=================================================================== */
+let animating=false;
+function updateSim(){ const q=cur, v=picks.simVals; const r=simRead(q,v);
+  const rd=$('#reading'); if(rd) rd.textContent = r.value + (r.unit?(' '+r.unit):'');
+  picks._lastRead=r;
+  if(!animating) syncScene(q,v);   // 애니메이션 중엔 건드리지 않음
+}
+function initSim(q){
+  const wrap=$('#ctlWrap');
+  wrap.innerHTML=q.sim.controls.map(c=>{
+    const v=picks.simVals[c.key];
+    if(c.kind==='seg'){
+      const segs=c.options.map((o,i)=>`<button class="${i==v?'on':''}" style="--ac:${q.ac}" onclick="setSeg('${c.key}',${i})">${o}</button>`).join('');
+      return `<div class="ctl"><div class="top"><div class="nm">${c.label} <span class="role" style="background:${c.roleC}">${c.role}</span></div></div><div class="seg">${segs}</div></div>`;
+    }
+    return `<div class="ctl"><div class="top"><div class="nm">${c.label} <span class="role" style="background:${c.roleC}">${c.role}</span></div><div class="val" id="v_${c.key}">${ctlLabel(c,v)}</div></div>
+      <input type="range" style="--ac:${q.ac}" min="${c.min}" max="${c.max}" step="${c.step}" value="${v}" oninput="setSlider('${c.key}',this.value)"></div>`;
+  }).join('');
+  buildScene(q);            // 골격 1회 생성
+  updateSim();              // 수치/동기화
+  renderReport();
+}
+function setSeg(key,i){ if(animating) return; picks.simVals[key]=i;
+  // 세그 버튼 활성 표시만 갱신
+  const c=cur.sim.controls.find(x=>x.key===key);
+  document.querySelectorAll('.ctl').forEach(ctl=>{ const nm=ctl.querySelector('.nm'); if(nm&&nm.textContent.includes(c.label)){ ctl.querySelectorAll('.seg button').forEach((b,bi)=>b.classList.toggle('on',bi===i)); } });
+  updateSim();
+}
+function recordRow(){ if(animating) return; const q=cur, v=picks.simVals; const r=picks._lastRead||simRead(q,v);
+  const row={}; q.sim.cols.forEach(col=>{ const key=col[1];
+    if(key==='read') row[key]=r.value;
+    else if(r.extra&&r.extra[key]!=null) row[key]=r.extra[key];
+    else row[key]=v[key]; });
+  picks.report.push(row); renderReport(true); refreshNext();
+}
+function renderReport(flash){ const q=cur, w=$('#reportWrap'); if(!w) return;
+  const heads=q.sim.cols.map(c=>`<th>${c[0]}${c[2]?` (${c[2]})`:''}</th>`).join('');
+  let rows;
+  if(!picks.report.length){ rows=`<tr><td colspan="${q.sim.cols.length}" class="empty">슬라이더로 실험한 뒤 «기록»을 누르면 여기에 쌓여요. (최소 ${q.sim.need}회)</td></tr>`; }
+  else { rows=picks.report.map((r,ri)=>`<tr class="${flash&&ri===picks.report.length-1?'flash':''}">${q.sim.cols.map(c=>`<td>${r[c[1]]}</td>`).join('')}</tr>`).join(''); }
+  w.innerHTML=`<div class="report"><div class="rhead"><span>📋 실험 보고서</span><span class="mono">${picks.report.length}/${q.sim.need} 기록</span></div>
+    <table><thead><tr>${heads}</tr></thead><tbody>${rows}</tbody></table></div>
+    ${picks.report.length>=q.sim.need?'<div class="fb good show">✅ 충분히 기록했어! 다음으로 가서 과학자와 비교해보자.</div>':''}`;
+}
+function easeIn(t){ return t*t; }            // 가속(낙하)
+function easeOut(t){ return 1-(1-t)*(1-t); } // 감속
+
+/* ---------- 골격 생성 ---------- */
+function buildScene(q){
+  const c=$('#canvas'); if(!c) return;
+  if(q.id==='phys') c.innerHTML=physScene();
+  else if(q.id==='chem') c.innerHTML=chemScene();
+  else if(q.id==='bio') c.innerHTML=bioScene();
+}
+/* 실험 이전 비트에서 보여줄 정지 미리보기(슬라이더 없이 현재 값으로 1회 동기화) */
+function scenePreview(q){
+  let svg='';
+  if(q.id==='phys') svg=physScene(); else if(q.id==='chem') svg=chemScene(); else if(q.id==='bio') svg=bioScene();
+  // 버튼은 미리보기에서 비활성으로 보이게: 그대로 두되 onclick은 작동(실험 단계 아니어도 재미로 가능)
+  setTimeout(()=>{ try{ syncScene(q,picks.simVals||{}); }catch(e){} },0);
+  return svg;
+}
+/* ---------- 속성 동기화(애니메이션 아님) ---------- */
+function syncScene(q,v){
+  if(q.id==='phys') physSync(v);
+  else if(q.id==='chem') chemSync(v);
+  else if(q.id==='bio') bioSync(v);
+}
+function E(id){ return document.getElementById(id); }
+function setA(id,attr,val){ const e=E(id); if(e) e.setAttribute(attr,val); }
+function setT(id,txt){ const e=E(id); if(e) e.textContent=txt; }
+
+/* ===================================================================
+   물리 — 피사의 탑 낙하 (진짜로 떨어진다)
+=================================================================== */
+const PHYS={ topY:78, groundY:300 };
+function physScene(){ return `<svg viewBox="0 0 360 340" shape-rendering="geometricPrecision">
+  <!-- 하늘/땅 -->
+  <rect x="0" y="0" width="360" height="${PHYS.groundY+8}" fill="#cfe6f2"/>
+  <rect x="0" y="${PHYS.groundY+8}" width="360" height="40" fill="#6aa84f"/>
+  <rect x="0" y="${PHYS.groundY+20}" width="360" height="28" fill="#8a6a40"/>
+  <!-- 피사의 탑 (약간 기울임) -->
+  <g transform="rotate(-4 96 ${PHYS.groundY+8})">
+    <rect x="70" y="60" width="52" height="${PHYS.groundY-52}" fill="#cdbf9c" stroke="#a89066" stroke-width="2"/>
+    ${[0,1,2,3,4,5].map(i=>`<rect x="70" y="${72+i*36}" width="52" height="3" fill="#a89066"/>`).join('')}
+    <rect x="66" y="46" width="60" height="16" fill="#bcab82" stroke="#a89066" stroke-width="2"/>
+    <rect x="74" y="34" width="44" height="14" fill="#cdbf9c" stroke="#a89066" stroke-width="2"/>
+  </g>
+  <!-- 낙하선 기준 점선 -->
+  <line x1="190" y1="${PHYS.topY+20}" x2="190" y2="${PHYS.groundY}" stroke="#9aa" stroke-width="1" stroke-dasharray="3 6"/>
+  <line x1="262" y1="${PHYS.topY+20}" x2="262" y2="${PHYS.groundY}" stroke="#9aa" stroke-width="1" stroke-dasharray="3 6"/>
+  <!-- 공 두 개 -->
+  <circle id="pBallA" cx="190" cy="${PHYS.topY}" r="20" fill="#3b3f4a" stroke="#22252c" stroke-width="2"/>
+  <text id="pLabA" x="190" y="${PHYS.topY+4}" font-size="11" fill="#fff" text-anchor="middle" font-weight="bold">5kg</text>
+  <circle id="pBallB" cx="262" cy="${PHYS.topY}" r="12" fill="#8a9099" stroke="#5b616a" stroke-width="2"/>
+  <text id="pLabB" x="262" y="${PHYS.topY+3}" font-size="9" fill="#fff" text-anchor="middle" font-weight="bold">2kg</text>
+  <!-- 착지 표시 -->
+  <text id="pLandA" x="190" y="${PHYS.groundY+34}" font-size="11" fill="#16a34a" text-anchor="middle" font-weight="bold" opacity="0">✔</text>
+  <text id="pLandB" x="262" y="${PHYS.groundY+34}" font-size="11" fill="#16a34a" text-anchor="middle" font-weight="bold" opacity="0">✔</text>
+  <!-- 상태/타이머 -->
+  <rect id="pAirBox" x="14" y="14" width="160" height="26" fill="#3b5bdb" opacity=".12"/>
+  <text id="pAir" x="94" y="31" font-size="13" text-anchor="middle" font-weight="bold" fill="#3b5bdb">💨 공기저항 있음</text>
+  <text id="pTimer" x="300" y="32" font-size="16" fill="#241f33" text-anchor="middle" font-weight="bold" font-family="JetBrains Mono">0.00s</text>
+</svg>
+<div class="exp-note">피사의 탑 — 무게·공기저항을 바꾸고 «떨어뜨리기»를 눌러 보자.</div>
+<div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%)"><button class="btn gold sm" id="dropBtn" onclick="dropPhys()">⬇ 떨어뜨리기</button></div>`;
+}
+function physSync(v){ const w=v.w||5, air=v.air||0; const r=10+w*1.5;
+  setA('pBallA','r',r); setT('pLabA',w+'kg');
+  setA('pBallA','cy',PHYS.topY); setA('pBallB','cy',PHYS.topY);
+  setA('pLabA','y',PHYS.topY+4); setA('pLabB','y',PHYS.topY+3);
+  E('pLandA')&&(E('pLandA').setAttribute('opacity',0)); E('pLandB')&&(E('pLandB').setAttribute('opacity',0));
+  if(air===1){ setT('pAir','🟢 진공 (공기저항 없음)'); setA('pAir','fill','#16a34a'); setA('pAirBox','fill','#16a34a'); }
+  else { setT('pAir','💨 공기저항 있음'); setA('pAir','fill','#3b5bdb'); setA('pAirBox','fill','#3b5bdb'); }
+  setT('pTimer','0.00s');
+}
+function dropPhys(){ if(animating) return; const v=picks.simVals; const w=v.w||5, air=v.air||0;
+  physSync(v);                       // 시작 위치 리셋
+  animating=true; const btn=E('dropBtn'); if(btn) btn.disabled=true;
+  // 낙하 시간: 진공이면 동일, 공기면 무거운 공(A)이 살짝 빠르고 가벼운 공(B)이 느림
+  const tA = air===1 ? 1.40 : 1.40 + (10-w)*0.0;       // A는 슬라이더 무게
+  const tB = air===1 ? 1.40 : 1.62;                     // B는 2kg 고정(공기 중 더 느림)
+  const durA = air===1 ? 1100 : 1100;                  // 화면 재생시간(ms)
+  const durB = air===1 ? 1100 : 1280;
+  const startTop=PHYS.topY, endTop=PHYS.groundY-2;
+  const t0=performance.now(); const total=Math.max(durA,durB);
+  function frame(now){ const el=now-t0;
+    const pA=Math.min(1,el/durA), pB=Math.min(1,el/durB);
+    setA('pBallA','cy', startTop+(endTop-startTop)*easeIn(pA));
+    setA('pLabA','y', startTop+4+(endTop-startTop)*easeIn(pA));
+    setA('pBallB','cy', startTop+(endTop-startTop)*easeIn(pB));
+    setA('pLabB','y', startTop+3+(endTop-startTop)*easeIn(pB));
+    if(pA>=1) E('pLandA')&&E('pLandA').setAttribute('opacity',1);
+    if(pB>=1) E('pLandB')&&E('pLandB').setAttribute('opacity',1);
+    // 타이머는 «실제 물리 시간»을 표시
+    const shownT = air===1 ? 1.40*Math.min(1,el/total) : (1.40+ (10-w)*0.0 + 0.22*( (now-t0)>durA?1:0 ));
+    setT('pTimer', (air===1? (1.40*Math.min(1,el/total)) : (1.40*Math.min(1,el/durA))).toFixed(2)+'s');
+    if(el<total){ requestAnimationFrame(frame); }
+    else { animating=false; if(btn) btn.disabled=false;
+      const r=simRead(cur,v); setT('pTimer', r.value+'s');
+      if(air===1) setT('pAir','🟢 진공: 무게와 상관없이 «동시» 착지!');
+      else setT('pAir','💨 공기 중: 가벼운 공이 조금 늦게 착지');
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ===================================================================
+   화학 — 밀폐/개방 가열 (불꽃 일렁임 + 저울 바늘)
+=================================================================== */
+function chemScene(){ return `<svg viewBox="0 0 360 340" shape-rendering="geometricPrecision">
+  <rect x="0" y="0" width="360" height="340" fill="#efe7d2"/>
+  <!-- 저울 -->
+  <rect x="70" y="290" width="220" height="14" fill="#8a6a40"/>
+  <rect x="172" y="250" width="16" height="42" fill="#9a7a50"/>
+  <rect x="90" y="236" width="180" height="16" fill="#bcab82" stroke="#9a8456" stroke-width="2"/>
+  <!-- 저울 눈금/바늘 -->
+  <circle cx="180" cy="244" r="3" fill="#5b5470"/>
+  <line id="cNeedle" x1="180" y1="244" x2="180" y2="222" stroke="#dc2626" stroke-width="2.5"/>
+  <text id="cScale" x="180" y="284" font-size="17" text-anchor="middle" font-weight="bold" font-family="JetBrains Mono">230 g</text>
+  <!-- 유리 용기 -->
+  <rect id="cJar" x="124" y="92" width="104" height="142" rx="3" fill="rgba(150,210,235,.28)" stroke="#4a7a96" stroke-width="3"/>
+  <!-- 뚜껑(밀폐) / 열린 입구 -->
+  <rect id="cLid" x="120" y="86" width="112" height="9" fill="#4a7a96"/>
+  <!-- 금속 -->
+  <rect id="cMetal" x="150" y="186" width="52" height="40" fill="#8a8f9a" stroke="#5b6068" stroke-width="2"/>
+  <rect x="150" y="186" width="52" height="7" fill="#a4a9b4"/>
+  <!-- 불꽃(애니메이션) -->
+  <g id="cFlame" opacity="0">
+    <path id="cFlameO" d="M176 186 q-13 -22 0 -40 q13 18 0 40z" fill="#ff8a1e"/>
+    <path id="cFlameI" d="M176 182 q-6 -12 0 -22 q6 10 0 22z" fill="#ffd23f"/>
+  </g>
+  <!-- 산소 입자(개방 시 빨려 들어감) -->
+  <g id="cO2" opacity="0">
+    <circle class="o2" cx="120" cy="120" r="4" fill="#3b5bdb"/><circle class="o2" cx="240" cy="140" r="4" fill="#3b5bdb"/>
+    <circle class="o2" cx="110" cy="170" r="4" fill="#3b5bdb"/>
+  </g>
+  <rect id="cModeBox" x="250" y="14" width="96" height="26" fill="var(--chem)" opacity=".15"/>
+  <text id="cMode" x="298" y="31" font-size="14" text-anchor="middle" font-weight="bold" fill="var(--chem)" font-family="JetBrains Mono">밀폐</text>
+  <text id="cDelta" x="180" y="324" font-size="12" text-anchor="middle" font-weight="bold" fill="#5b5470"></text>
+</svg>
+<div class="exp-note">밀폐/개방을 바꾸고 «가열»해 가열 전후 «전체» 질량을 비교하자.</div>
+<div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%)"><button class="btn gold sm" id="heatBtn" onclick="heatChem()">🔥 가열하기</button></div>`;
+}
+function chemSync(v){ const seal=v.seal||0, m=v.m||30; const before=m+50;
+  // 금속 크기: 양에 비례
+  const mh=24+m*0.6; setA('cMetal','height',mh); setA('cMetal','y',226-mh);
+  // 뚜껑/모드
+  if(seal===0){ setA('cLid','opacity',1); setT('cMode','밀폐'); setA('cMode','fill','var(--chem)'); setA('cModeBox','fill','var(--chem)'); }
+  else { setA('cLid','opacity',0); setT('cMode','개방'); setA('cMode','fill','#999'); setA('cModeBox','fill','#999'); }
+  setT('cScale', before+' g'); setA('cNeedle','x2',180); setA('cNeedle','y2',222);
+  setT('cDelta','가열 전 '+before+'g');
+  E('cFlame')&&E('cFlame').setAttribute('opacity',0);
+  E('cO2')&&E('cO2').setAttribute('opacity',0);
+}
+let flameTimer=null;
+function heatChem(){ if(animating) return; const v=picks.simVals; const seal=v.seal||0, m=v.m||30;
+  const before=m+50, after=seal===0?before:before+Math.round(m*0.15);
+  chemSync(v); animating=true; const btn=E('heatBtn'); if(btn) btn.disabled=true;
+  E('cFlame').setAttribute('opacity',1);
+  if(seal===1) E('cO2').setAttribute('opacity',1);
+  // 불꽃 일렁임
+  let k=0; clearInterval(flameTimer); flameTimer=setInterval(()=>{ k++;
+    const s=1+0.12*Math.sin(k/2); const fo=E('cFlameO'), fi=E('cFlameI');
+    if(fo) fo.setAttribute('transform',`translate(176 186) scale(${s} ${1/s*1.05}) translate(-176 -186)`);
+    if(fi) fi.setAttribute('transform',`translate(176 182) scale(${s} ${1/s}) translate(-176 -182)`);
+  },60);
+  // 저울 바늘 + 숫자 가열 전→후 보간
+  const t0=performance.now(), dur=1500;
+  function frame(now){ const p=Math.min(1,(now-t0)/dur);
+    const cur_g=Math.round(before+(after-before)*easeOut(p));
+    setT('cScale',cur_g+' g');
+    setA('cNeedle','x2', 180 + (cur_g-before)*1.4);   // 바늘 기울기
+    setA('cNeedle','y2', 222 - Math.abs(cur_g-before)*0.2);
+    // 산소 입자 빨려들기(개방)
+    if(seal===1){ document.querySelectorAll('#cO2 .o2').forEach((o,oi)=>{
+      const tx=176, ty=190; const ox=[120,240,110][oi], oy=[120,140,170][oi];
+      o.setAttribute('cx', ox+(tx-ox)*p); o.setAttribute('cy', oy+(ty-oy)*p);
+      o.setAttribute('opacity', 1-p*0.7);
+    }); }
+    if(p<1) requestAnimationFrame(frame);
+    else { clearInterval(flameTimer); animating=false; if(btn) btn.disabled=false;
+      setT('cScale',after+' g');
+      setT('cDelta', seal===0 ? `가열 전 ${before}g → 후 ${after}g · 변화 없음! (질량 보존)` : `가열 전 ${before}g → 후 ${after}g · +${after-before}g (산소와 결합)`);
+      setTimeout(()=>{ E('cFlame')&&E('cFlame').setAttribute('opacity',0); E('cO2')&&E('cO2').setAttribute('opacity',0); },700);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ===================================================================
+   생물 — 레디 3병 (날짜 진행 + 파리 + 구더기 등장)
+=================================================================== */
+const BIO_X=[26,140,254];
+function bioScene(){
+  const jar=(x,i)=>`<g>
+    <rect x="${x}" y="150" width="64" height="96" rx="3" fill="rgba(150,200,170,.22)" stroke="#5a8a6a" stroke-width="3"/>
+    <rect x="${x+10}" y="208" width="44" height="32" fill="#b86b4b"/>
+    <g id="lid${i}"></g>
+    <text x="${x+30}" y="262" font-size="12" text-anchor="middle" font-weight="bold">${['열림','거즈','밀폐'][i]}</text>
+    <g id="mag${i}" opacity="0">
+      <circle cx="${x+20}" cy="224" r="3" fill="#e8d9b0"/><circle cx="${x+30}" cy="228" r="3" fill="#e8d9b0"/>
+      <circle cx="${x+40}" cy="222" r="3" fill="#e8d9b0"/><circle cx="${x+26}" cy="232" r="3" fill="#e8d9b0"/></g>
+  </g>`;
+  return `<svg viewBox="0 0 344 320" shape-rendering="geometricPrecision">
+    <rect x="0" y="0" width="344" height="266" fill="#eef3e6"/>
+    <rect x="0" y="266" width="344" height="54" fill="#8a6a40"/>
+    ${jar(BIO_X[0],0)}${jar(BIO_X[1],1)}${jar(BIO_X[2],2)}
+    <g id="flies" opacity="0"><text id="fly1" x="40" y="110" font-size="18">🪰</text><text id="fly2" x="70" y="90" font-size="14">🪰</text></g>
+    <rect id="bioSel" x="${BIO_X[0]-6}" y="138" width="76" height="116" fill="none" stroke="var(--bio)" stroke-width="3"/>
+    <text id="bioDay" x="172" y="300" font-size="13" text-anchor="middle" font-weight="bold" fill="#fff">1일째</text>
+  </svg>
+  <div class="exp-note">뚜껑을 고르고 «며칠 후 관찰»을 눌러 구더기가 생기는지 보자.</div>
+  <div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%)"><button class="btn gold sm" id="obsBtn" onclick="observeBio()">🔍 며칠 후 관찰</button></div>`;
+}
+function lidSVG(i,x){ // 0 열림(없음) 1 거즈 2 밀폐
+  if(i===0) return `<rect x="${x-3}" y="146" width="70" height="5" fill="#8a6a40"/>`;
+  if(i===1) return `<rect x="${x-3}" y="142" width="70" height="9" fill="#d8cdb0" stroke="#8a6a40" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+  return `<rect x="${x-3}" y="142" width="70" height="10" fill="#8a6a40"/>`;
+}
+function bioSync(v){ const cap=v.cap||0, day=v.day||0;
+  [0,1,2].forEach(i=>{ const g=E('lid'+i); if(g) g.innerHTML=lidSVG(i,BIO_X[i]); E('mag'+i)&&E('mag'+i).setAttribute('opacity',0); });
+  setA('bioSel','x', BIO_X[cap]-6);
+  setT('bioDay', (day||1)+'일째'); E('flies')&&E('flies').setAttribute('opacity',0);
+}
+function observeBio(){ if(animating) return; const v=picks.simVals; const cap=v.cap||0, day=v.day||0;
+  bioSync(v); animating=true; const btn=E('obsBtn'); if(btn) btn.disabled=true;
+  const willGrow = cap===0 && day>=2;
+  // 날짜 카운트업 + (열림이면) 파리 등장 → 구더기 페이드인
+  E('flies')&&E('flies').setAttribute('opacity', cap===0?1:0.0);
+  let d=1; const target=Math.max(1,day); const t0=performance.now(); const dur=Math.max(700,target*220);
+  function frame(now){ const p=Math.min(1,(now-t0)/dur); d=Math.round(1+(target-1)*p);
+    setT('bioDay', d+'일째');
+    // 파리가 열린 병 위를 떠다님
+    if(cap===0){ const f1=E('fly1'),f2=E('fly2'); if(f1){ f1.setAttribute('x',40+Math.sin(now/180)*10); f1.setAttribute('y',110+Math.cos(now/150)*6);} if(f2){ f2.setAttribute('x',70+Math.cos(now/160)*8); f2.setAttribute('y',90+Math.sin(now/200)*6);} }
+    // 막판에 구더기 등장
+    if(willGrow && p>0.7){ const mg=E('mag0'); if(mg) mg.setAttribute('opacity', Math.min(1,(p-0.7)/0.3)); }
+    if(p<1) requestAnimationFrame(frame);
+    else { animating=false; if(btn) btn.disabled=false;
+      const r=simRead(cur,v);
+      setT('bioDay', target+'일째 · '+(willGrow?'열린 병에 구더기 '+r.value+'! 막은 병은 깨끗':'구더기 없음'));
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ===== 비교 ===== */
+function compareBody(q){
+  const myHypo=q.hypo.opts[picks.hypo]?q.hypo.opts[picks.hypo].me:'—';
+  const myCtrl=[...picks.ctrl].filter(i=>q.ctrl.opts[i]&&q.ctrl.opts[i].ok).map(i=>q.ctrl.opts[i].t).join(', ')||'—';
+  const match=picks.hypo===q.hypo.sci;
+  const last=picks.report[picks.report.length-1];
+  const myData=last?q.sim.cols.map(c=>`${c[0]} ${last[c[1]]}${c[2]?c[2]:''}`).join(' · '):'—';
+  return `<div class="beat-eye">과학자는? · COMPARE</div><div class="beat-h">나 vs ${q.sci}</div>
+    <div class="fb info show" style="margin-bottom:12px">🧪 내 보고서 마지막 기록: <b>${myData}</b></div>
+    <div class="cmp">
+      <div class="col me"><h5>🙋 나의 탐구</h5>
+        <div class="row"><span class="k">가설</span><br>${myHypo}</div>
+        <div class="row"><span class="k">조작변인</span><br>${q.manip.ans}</div>
+        <div class="row"><span class="k">통제변인</span><br>${myCtrl}</div></div>
+      <div class="col sci"><h5>🔬 ${q.sci}</h5>
+        <div class="row"><span class="k">가설</span><br>${q.cmp.sciHypo}</div>
+        <div class="row"><span class="k">변인통제</span><br>${q.cmp.sciCtrl}</div>
+        <div class="row"><span class="k">결과</span><br>${q.cmp.sciResult}</div></div>
+    </div>
+    <div class="fb ${match?'good':'info'} show">${match?'🎯 네 가설이 과학자와 같았어! 멋진 직관이야.':'🤔 가설은 달랐지만 괜찮아 — 과학자도 처음엔 «틀릴 수 있는» 가설로 시작해. 중요한 건 실험으로 확인하는 거야.'}</div>`;
+}
+
+/* ===== 완료/보상/순위 ===== */
+async function finishInquiry(){ const q=cur;
+  const gained=40 + (picks.hypo===q.hypo.sci?20:10) + (picks.ctrlScore||0)*10 + 10; // +10 최종퀴즈
+  const prev=state.cleared[q.id]; const best=Math.max(prev||0,gained);
+  state.score+=(best-(prev||0)); state.cleared[q.id]=best; $('#scoreV').textContent=state.score;
+  if(online&&state.gid){ try{ await sb.from('sci_clears').upsert(
+    {group_id:state.gid,group_name:state.team,inquiry:q.id,score:best,my_hypo:q.hypo.opts[picks.hypo]?q.hypo.opts[picks.hypo].me:'',created_at:new Date().toISOString()},
+    {onConflict:'group_id,inquiry'}); }catch(e){ console.warn(e); } }
+  const aw=$('#award'); aw.innerHTML=`<div class="box"><div class="em">🏅</div><h3>${q.subject} 탐구 완료!</h3>
+    <div class="pts">+${gained}점</div>
+    <p>이야기를 듣고, 가설을 세우고, 직접 실험해 보고서를 쓰고, 과학자와 비교했어.<br>다른 탐구에도 도전해 순위를 올려보자!</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn ghost sm" onclick="closeOv('award');openLead()">🏆 순위</button>
+      <button class="btn gold sm" onclick="closeOv('award');toMap()">지도로 →</button></div></div>`;
+  aw.classList.add('on');
+}
+function closeOv(id){ $('#'+id).classList.remove('on'); }
+async function openLead(){ const list=$('#leadList'); list.innerHTML='<div class="empty2">불러오는 중…</div>'; $('#lead').classList.add('on');
+  let rows=[];
+  if(online){ try{ const {data}=await sb.from('sci_clears').select('group_name,score');
+    const agg={}; (data||[]).forEach(r=>agg[r.group_name]=(agg[r.group_name]||0)+r.score);
+    rows=Object.entries(agg).map(([nm,sc])=>({nm,sc})); }catch(e){ console.warn(e); } }
+  if(!online) rows=[{nm:state.team||'나',sc:state.score}];
+  rows.sort((a,b)=>b.sc-a.sc);
+  if(!rows.length){ list.innerHTML='<div class="empty2">아직 점수가 없어요.<br>탐구를 완료하면 순위에 올라갑니다!</div>'; return; }
+  const medal=['🥇','🥈','🥉'];
+  list.innerHTML=rows.map((r,i)=>`<div class="lrow ${r.nm===state.team?'me':''}"><div class="rk">${medal[i]||(i+1)}</div>
+    <div class="nm">${r.nm}${r.nm===state.team?' <small>우리 모둠</small>':''}</div><div class="sc">${r.sc}점</div></div>`).join('');
+  if(!online) list.insertAdjacentHTML('beforeend','<div class="empty2" style="padding:14px">⚙️ Supabase 키를 넣으면 모든 모둠과 실시간 경쟁이 켜져요.</div>');
+}
+function openHelp(){ $('#help').classList.add('on'); }
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ ['lead','help','award'].forEach(closeOv); return; }
+  if(!$('#map').classList.contains('on')) return;
+  if(document.querySelector('.ov.on')) return;
+  if((document.activeElement&&document.activeElement.tagName)==='INPUT') return;
+  if(e.key==='Enter'||e.key===' '){ if(state.nearNode){ e.preventDefault(); enterInquiry(state.nearNode); } return; }
+  const step=3.4; let dx=0,dy=0;
+  if(e.key==='ArrowLeft')dx=-step; else if(e.key==='ArrowRight')dx=step;
+  else if(e.key==='ArrowUp')dy=-step; else if(e.key==='ArrowDown')dy=step; else return;
+  e.preventDefault();
+  moveHero(clamp(state.heroX+dx,4,96), clamp(state.heroY+dy,8,93));
+});
+</script>
+</body>
+</html>
