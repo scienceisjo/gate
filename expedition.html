@@ -336,13 +336,13 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;background:var(--ac,v
 /* =====================================================================
    설정
 ===================================================================== */
-const SUPABASE_URL='', SUPABASE_ANON_KEY='';
+const SUPABASE_URL='https://vbvtnmnodeoocbbjauap.supabase.co', SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZidnRubW5vZGVvb2NiYmphdWFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0OTQ0OTYsImV4cCI6MjA5NTA3MDQ5Nn0.dvuRrt3qw2Tya_QwGbcXrmGPdfDgI4xmgyH8UjU73Nc';
 /* 직접 만든 마크 이미지를 쓰려면 URL을 넣으세요(GitHub raw). 비우면 SVG 복셀 사용. */
 const ASSETS={
-  bg:   'hyphotesis/map-bg.png',
-  hero: 'hyphotesis/hero.png',
-  labs:{ phys:'hyphotesis/lab-phys.png', chem:'hyphotesis/lab-chem.png', bio:'hyphotesis/lab-bio.png' },
-  comics:{ phys:'hyphotesis/comic-phys.png', chem:'hyphotesis/comic-chem.png', bio:'hyphotesis/comic-bio.png' }
+  bg:   'hyphothesis/map-bg.png',
+  hero: 'hyphothesis/hero.png',
+  labs:{ phys:'hyphothesis/lab-phys.png', chem:'hyphothesis/lab-chem.png', bio:'hyphothesis/lab-bio.png' },
+  comics:{ phys:'hyphothesis/comic-phys.png', chem:'hyphothesis/comic-chem.png', bio:'hyphothesis/comic-bio.png' }
 };
 
 /* =====================================================================
@@ -630,7 +630,7 @@ function storyBody(q){
     <div class="beat-h" style="font-size:20px">${sq.q}</div>${hintBtn(sq.hint)}
     ${sq.opts.map((o,i)=>quizOpt(i,o.t,'story')).join('')}<div class="fb" id="storyFb"></div>`;
 }
-function comicSlot(id){ return `<div class="comic-slot">🎨 여기에 «사건 만화»가 들어갑니다<br><span>hyphotesis/comic-${id}.png</span></div>`; }
+function comicSlot(id){ return `<div class="comic-slot">🎨 여기에 «사건 만화»가 들어갑니다<br><span>hyphothesis/comic-${id}.png</span></div>`; }
 
 /* ---------- 가설 옵션 ---------- */
 function optHTML(i,t,kind){ const sel=picks[kind]===i; return `<button class="opt ${sel?'sel':''}" onclick="pickHypo(${i})"><span class="mk">${'ABCDE'[i]}</span><span>${t}</span></button>`; }
